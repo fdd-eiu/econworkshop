@@ -1,0 +1,579 @@
+---
+title: "Project appraisal"
+output: 
+  learnr::tutorial:
+  progressive: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+#library(financial) 
+library(FinancialMath)
+#library(FinCal)
+#library(financial) 
+knitr::opts_chunk$set(echo = FALSE)
+
+```
+
+
+## Financial and Cost/Benefit Analyses
+
+
+- Why undertake an economic assessment?
+
+- What does an economic assessment involve?
+
+- What can economic assessments be used for?
+
+- What are they limited by and what are their limitations?For analysis of investment proposals
+  - Economic assessment usually contains two main components
+      1. Financial analysis
+      2. Cost benefit analysis (other approaches also used) 
+
+### Objective
+
+- Examine whether the project is financially viable
+  - With/without concessions sought
+  - Need for concessions if sought 
+  - Sustainability of project and its component parts
+
+### Cost-Benefit Analysis (CBA)
+
+- Examine whether the project is desirable from the national perspective
+- What are the cost of the concessions etc
+- What are the benefits that the project generates to the country and its citizens
+- Does it create net economic benefits to the country (i.e. are the benefits from it greater than the costs involved). 
+
+### Cost-Benefit Analysis - Benefits
+
+- Types of benefits (issues)
+- Profits earned by local equity holders (retention in domestic economy)
+- Employment (???opportunity cost of labour???)
+- Value added component of local purchases of goods and service (estimation (using VARs), variation between different goods/services) 
+- Government revenue (Taxes, duties, access fees)
+- Other 
+  - Expenditure does not equate to benefit
+  - Definition and specification of economic benefits varies 
+
+### Cost-Benefit Analysis (Costs)
+
+- Types of costs:
+  - Forgone government revenue
+    - Access fees (can be significant when access rights limited and valuable)
+    - Taxes and duties 
+    - Would they be collected anyway?
+  - Externalities 
+    - Impacts on others and the economic benefit they generate
+      - Particularly relevant to harvest sector (impacts on CPUE and financial viability)
+    - Environment, social costs etc
+
+### Conducting the analysis
+
+- Financial analysis
+  - Ideally should be to able develop a model that can analyse the financial performance of the project from the information provided in the proposal)
+    - This model can then be used to examine impact of variations in concessions sought.
+  - Often though what is provided are just vague indications of job numbers, exports etc. 
+  
+- CBA - Benefits
+  - Ideally use financial and operational data provide by company to develop model of benefits associated with
+    - Profits earned by local equity holders (retained)
+    - Employment of nationals
+    - Value added component of local purchases
+    - Government taxes, duties and access fees paid
+
+- CBA - Costs
+  - Need to develop a model of the costs
+    - Government revenue forgone
+    - Impact on others in harvest sector
+    - Other externalities
+    
+## Interest calculations
+
+There are two ways to calculate the interest owed on money borrowed. Simple and compound interest.
+
+- Simple interest
+
+With simple interest say you borrow $\$ 10$ at $10\%$ per year for one year (maturity of the loan)  then after one year you will need to repay $\$ 10$ (the principle) plus $\$ 1$ in interest owed. If you borrow $\$ 10 $ for two years then after two years you would need to repay the principle plus $\$ 2$.
+
+We can generalize this to a formula:
+
+$$ \mbox{Future value} = \mbox{Principle}  \times (1+ i t)$$
+
+where $i$ is the interest rate. and $t$ is the number of periods (years). 
+
+We can reverse this process to find the present value of a future payment:
+
+$$\mbox{Present value} = \mbox{Future Vaue} \times \frac{1}{1 + i t}$$
+For an investor (principal) loaning an amount of money the calculation is the sam. the model of simple interest works well for an investor if he receives the interest payments in a lump-sum at the end of the agreed period of the loan. However, if he receives interest payments at rergular intervals at each intervening period then he would be able to reinvest these. Therefore, a loan contract of multiple years involving simple interest would mean the lender foregoes interest earnings.  To avoid these foregone earnings, compound interest is used.
+
+- Compound interest
+
+In the case of compound interest, investing $10 for one year at $10\% $ will return the $\$ 10$ principle plus $\$ 1$ in interest: $10 \times (1+0.1)$. If the loan were for two years it would return $10 \times (1 +0.1)^2$. If we now gerneralize this idea to $t$ periods then $\$ 10$ will be worth $\$ 10 \times (1+0.1)^t$ $t$ periods from now. This then leads to the formula for the future value of an amount that grows according to compound interest - the future value.
+
+
+- Future value
+
+$$\mbox{Future value (FV)} = P \times (1 + i)^t$$ 
+
+where $P$ denotes the principle.
+From this we can also calculate the value now of a future payment, i.e. the present value.
+
+- Present  Value
+
+$$ \mbox{Present value (PV)} = FV \times \frac{1}{(1 + i)^t}$$
+
+
+
+## Net Present Value
+
+- Net benefit in each period = benefit measured in willingness to pay ($WTP_i$) minus cost measured in opportunity cost ($c(x)$) of resources:
+  
+  $$NB_t = \sum_{i=1}^n WTP_i -c(x)$$
+  
+  - This is then summed and discounted across the life of the investment project to get the net present value (NPV):
+  
+  $$NPV = \sum_{t=0}^T \frac{NB_t}{(1+r)^t}$$
+  where r is the discount rate.
+
+
+### Tuna Cannery (Simplified Campbell model)
+
+Suppose that a foreign company proposes to invest $$\$ 100$$, a portion of which will be
+financed by a foreign bank, to set up an operation which will harvest and process 50 tons of tuna
+per year over a five year period. In addition to the raw tuna input, the operation will use 20 units
+of local labour and 50 units of imported materials per annum, and some water pollution will be
+caused. The company stresses the employment benefits of the project and asks for exemption
+from DWFN access fees, import duties and business income tax over the life of the project. Under
+what circumstances, if any, will this project confer a net benefit on the host country?
+
+- Data for the project were collected resulting in the following cash flows. The cash flows are broken into a private investment analysis for the foreign company which asks the question would they even invest in this project?
+
+- A project analysis for the foreign company taking into account that 60% of the investment is debt financed and that access fees would need to be paid.
+
+- An efficinecy analysis that combines, capital, operating, fishing and external costs and a social cost-benefit analysis (referent group analysis) taking into account access fees tax payments and tariff revenues employment benefits and the external costs.
+
+The latter two appraisal are separate and the former two are linked together.  
+
+Consider the following private analsysis:
+
+As an example consider a series of cash flows for a Tuna cannery:
+
+<TABLE style="width:100%", border="1px solid black">
+<th>Period</th><th>Net cash flow</th>
+<tr>
+<td>0</td><td> -50</td>
+</tr> 
+<tr>
+<td>1</td><td>16</td>
+</tr>
+<tr>
+<td>2</td><td>16</td>
+</tr>
+<tr>
+<td>3</td><td>15</td>
+</tr>
+<tr>
+<td>4</td><td>15</td>
+</tr>
+<tr>
+<td>5</td><td>15</td>
+</tr>
+</TABLE>
+
+The 50 figure is calculated by considering the investment of 100 with 60% debt financing and a 10% debt interest rate. Would it pay the foreign corporation to undertake this investment?
+
+
+
+```{r echo = FALSE}
+
+sidebarPanel(
+  sliderInput("i", label = "Discount rate", min= 0, max = 1, value = 0.05, step = 0.01),
+  numericInput("cf0",label = "Period 0", min = 0, max = 1, value = 0),
+  numericInput("cf1", label = "Period 1", min = 0, max = 100, value = 0),
+  numericInput("cf2", label = "Period 2", min = 0, max = 100, value = 0),
+  numericInput("cf3", label = "Period 3", min = 0, max = 100, value = 0),
+  numericInput("cf4", label = "Period 4", min =0, max = 100, value = 0),
+  numericInput("cf5", label = "Period 5", min=0, max = 100, value = 0)
+  
+)
+
+mainPanel(
+# errors fixed
+textOutput("npv")
+
+)
+
+```
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+
+
+```{r context="server"}
+
+npv <- reactive({
+  cf0 <- as.numeric(input$cf0)
+  cf <- as.numeric(c(input$cf1,input$cf2,input$cf3,input$cf4,input$cf5))
+  #times <- c(1,2,3,4,5)
+  #pv <- NPV(cf0,cf,times,i=ii,plot=TRUE)
+  interest <- as.numeric(input$i)
+  pv  <- NPV(cf0,cf,times=c(1,2,3,4,5),i=interest,plot=TRUE)
+  #delta <- 1/(1+interest)
+  #t <- c(0,1,2,3,4,5) 
+  #pv <- sum((delta^t)*cf)
+   #pv <- cf
+  return(pv)
+})
+
+
+#output$table <- renderTable({data()})
+
+output$npv <- renderText({paste("The Net present value is",npv())})
+
+```
+
+The above calculator computes the net present value by summing the discounted cash flows of the project over five years. In the following exercise you should vary the interest rate by moving the slider and enetering the cashflow values for each period.
+
+The net present value will be printed above this message.</p>
+
+&nbsp;
+
+&nbsp;
+
+### Exercise
+
+```{r projectanalysis, echo=FALSE}
+question("If the total operating costs are 265 per annum the access fee 50 per annum and revenue 349 per annum (This sums to 34 per annum)  with a capital cost of 110 is the project worth it?",
+      answer("Yes",correct=TRUE),
+      answer("No")
+         )
+question("If the interest rate increase to 20% is it still worth it",
+         answer("Yes"),
+         answer("No",correct=TRUE)
+         )
+```
+
+
+
+## Internal rate of return
+
+The internal rate of return is the discount rate that one obtains when one sets the NPV to zero. So it is the discount rate under which one is indifferent between going ahead with a project and not going ahead with a project. When using the internal rate of return it is common to compare the internal rate of return to market interest rates. The decision rules are then
+
+- Go ahead with the project if the internal rate of return exceeds the market interest rate
+- Don't go ahead with the project if the market interest rate exceeds the internal rate of return
+
+In the latter case you would earn more by leaving your as an investment in the bank. In the case of public projects (social cost benefit analysis)  rather than private investments one would compare the internal rate of return against the discount rate which depends on the interest rate, but ususally involves adding some additional factors.
+
+A major use of Cost-Benefit-Analysis is to assess Government investment proposals. So many Governments around the world ahve standardized the setting of discount rates for this reason. 
+
+```{r irr, echo=FALSE}
+question("Roughly what is the internal rate of return for the previous problem",
+      answer("5%"),
+      answer("10%"),
+      answer("15%", correct=TRUE),
+      answer("20%")
+      )
+```
+
+## Discount rates
+
+- Discount rates are related to interest rates (in equilibrium they should be equal but in practice we add a number of adjustments to the interest rate to obtain the discount rate)
+
+- The selection of discount rate should reflect the opportunity cost of capital: the return that could be earned per unit of time on an investment of similar risk - this is the rate people are willing to exchange current for future consumption
+
+- Discount rates are usually applied to real dollars. If nominal dollars are used, discount rate selected should include the rate of inflation. Both methods should result in the same NPV
+
+- International practice shows that discount rates tend to be higher for developing countries, while low rates are often used in environmental applications where benefits accrue in the distant future
+
+
+### The Benefit-cost Ratio
+
+Another way of representing the results of a Benefit-Cost calculation is in terms of a Benefit-Cost ratio:
+
+$$\mbox{B-C-Ratio} = \frac{Discounted Benefits}{Discounted Costs} = \frac{\sum_{i=1}^{n} \delta^t B_t}{\sum_{i=1}^{n} \delta^t C_t}$$
+
+
+If this is greater than 1 a project is considered viable. 
+
+
+### The Alternative
+
+- CBAs are generally used to evaluate an investment project or government policy against alternatives
+For a proposed government policy, the alternative tend to be the status quo of doing nothing
+For investment projects, the alternative could be a competing project proposal
+- CEA looks at the relative cost per unit of outcome across the alternatives.
+- It is especially commonly used in health services where it is inappropriate to monetise outcomes. CEA allows costs to be denominated against a unit gain in health (e.g. years of life, premature birth averted etc.)
+- Similarly it is often used in environmental assessments, denoted against number of animal or plant species recovered, tons of emissions reduced, kilometres of river restored etc.
+
+### Fisheries Economics
+
+- In fisheries economics, CBAs are more generally used to evaluate:
+  - Construction and operation of a processing plant
+- Entering into a joint venture arrangement (see also game theory later)
+- Management arrangements such as area closures (e.g. High seas FAD closures) or moving to quota management etc.
+- Courses of action in an event of a marine accident (e.g. oil spill, invasive pest incursion etc.)
+- Investment in onshore or inshore aquaculture facilities
+- For small PICs, a lot of investment decisions are tied to access concessions or arrangements with DWFNs
+
+
+### Examples of analysis
+
+1. Investment proposal with full information
+Campbell analysis of PNG cannery/fishing operation proposal
+
+2. Setting concessional rates for domestic vessels with limited data
+
+3. Joint venture anaysis
+
+
+## Joint Ventures
+
+A joint venture is a business entity created by two or more parties, generally characterized by shared ownership, shared returns and risks, and shared governance.
+
+It is an agreement for a particular purpose and usually a defined timeframe.
+ 
+They offer, at least in principle, an opportunity for each partner to benefit significantly from the comparative advantages of the other.
+
+Local partners bring knowledge of the domestic market, familiarity with government bureaucracies and regulations, understanding of local labor markets, possibly, existing manufacturing facilities. Foreign partners can offer advanced process and product technologies, management know-how, access to export markets, financial resources / capital.
+
+Entering a joint venture makes economic sense when the expected, risk adjusted rate of return is at least equal to the expected rate of return of an alternative investment project.
+
+Example:
+
+The fisheries agency has two options.  
+1) It can sell $D$ vessel days at price $P$.  
+2) It can contribute $D$ vessel days to a joint venture to receive a share $s$ of the joint venture’s profits.
+
+Assumptions:
+
+- The cost of operating the fisheries agency is the same under both options and hence is ignored.
+- The number of vessel days contributed to the joint venture does not change over time.
+- The life of the joint venture is infinite.
+- The price of a vessel day grows at a constant rate $\pi
+
+### Value of a Joint Venture
+
+The value of a joint venture (JV) is given by the expected discounted cash flows generated by the joint venture
+
+$$Value_{JV,0} = \sum_{t=0}^\infty \frac{s.prob_{JV,t}.Profit_t}{(1+R_{JV})^t} = \frac{s.prob_{JV}.Profit_{0}}{1 - \frac{1+\pi}{1+ R_{JV}}}$$ 
+
+where 
+
+- $s$ = Share in joint venture, 
+- $prob_{JV},_t$ = Probability of Joint Venture Succeeding, 
+- $Profit_t$ =  $Revenue_t$ - $Costs_t$,                           
+- $R_{JV}$ = $Discount$ $rate$ = Constant,
+- $\pi$ is the inflation rate
+
+
+
+### Factors that can increase the Value of Joint Venture
+
+The value of a joint venture increases
+
+- the larger is the share in the joint venture, $s$
+- the larger is the probability that the joint venture will succeed, $prob_{JV}$
+- the higher profits are, i.e. the higher revenues are and / or the lower costs are
+- the lower is the discount rate , $R_{JV}$, i.e. the rate of return of an alternative investment with similar risks
+
+
+## Vessel Day Scheme
+
+The VDS first received recognition in 2005 when the WCPFC adopted a CMM 2005-01,14 which made it mandatory for PNA to implement the VDS for satisfaction of the obligation to limit purse seine efforts in their EEZs to no greater than the 2004 level, or average of 2001 to 2004 level. The VDS came into effect in December 2007. 
+The VDS provides a framework for a right-based approach in fisheries management.
+
+- It involves limiting the number of fishing days that could be fished by purse seine fishing vessels. 
+- Implemented by the PNA in their aspiration to take full control of their tuna fishery. 
+- Primary objective: To optimise economic opportunities from stock harvesting and ensure stock sustainability.
+
+### Value of the Vessel Day Scheme 
+
+The value of the vessel day scheme (VDS) is given by the expected discounted cash flows generated from selling the vessel days
+
+$$Value_{VDS,0} = prob_{VDS}. D_{0}.P_{0} \sum_{t=0}^\infty \left(\frac{1+\pi}{1+R_{VDS}}\right)^t =\frac{prob_{VDS}.  D_0.P_0}{1-\frac{1+\pi}{1+R_{VDS}}}$$ 
+
+where 
+
+- $prob_{VDS}$ = Probability of Selling Vessel Days, 
+- $D$ =  Number of Vessel Days,                           
+- $P$ = Price of Vessel Day 
+- $\pi$ is the inflation rate
+- $R_{VDS}$ = Discount rate
+
+### Factors that can increase the Value of Vessel Day Scheme 
+
+The value of vessel days scheme will increase if:
+
+- more vessel days are sold, $D_0$
+- the vessel day price is high , $P_0$, 
+- the inflation rate is high $\pi$ 
+- the probability of selling the vessel days is high, $prob_{VDS}$
+- the discount rate is low , $R_{VDS}$, i.e. the rate of return of an alternative investment with similar risks
+
+
+
+
+## Joint Venture Risks 
+
+Earnings from a joint venture are more variable because profits vary with the price of tuna and the cost of inputs.
+There is an information asymmetry:
+
+- One party may have greater material knowledge about the joint venture.
+- $Adverse$ $selection$ $problem$: The riskier a project is the greater is the incentive to shift the risk to others,    e.g.through entering a joint venture → a more risky project is likely to be selected → the probability of the joint 
+  venture failing increases.
+
+- $Moral$ $hazard$ $problem$: One party’s actions may not be observable by the counterparty to the joint venture → the party   has an incentive to take greater risks because it does not bear the full cost if the joint venture fails → the probability of the joint venture failing increases.
+- The probability of a joint venture succeeding is lower than the probability of selling vessel days.
+- The discount rate for a joint venture is higher than the discount rate for the vessel day scheme.
+- The expected cash flow from a joint venture must be (substantially) higher than from selling vessel days to make  
+  economic sense.
+
+
+### Conclusions
+
+The $trade$-$off$ between entering into a joint venture and selling vessel days is between the $uncertain$ $prospect$ $of$ $a$ $potentially$ $large$ $gain$ $against$ $a$ $more$ $certain$ $but$ $lower$ $return$.
+
+- Reducing the riskiness of joint ventures is costly and difficult.
+
+- The costs of diversification are larger for small investments.
+
+- Information asymmetry problems are more difficult to overcome for small investors with more limited resources.
+
+- The problem is that information is costly to reveal but once it is revealed it becomes a public good.
+
+$Joint$ $ventures$ $should$ $be$ $considered$ $cautiously$.
+
+If the objective has increased risk exposure to the fishing sector,  an alternative investment option would be to sell vessel days and then buy shares in publicly listed fishing companies.
+Of course diversification would suggest investing in other sectors given the already large contribution of fishing revenue to the government’s finances.
+
+
+
+## Exercises 
+
+### Joint Ventures
+
+```{r echo=FALSE}
+sidebarPanel(
+  sliderInput("s", label = "Share of profit (s):",
+              min = 0, max = 1, value = 0.5, step = 0.01),
+  sliderInput("pjv", label = "Probability of JV success:",
+              min = 0, max = 1, value = 0.64, step = 0.01), #obtained from prior studies of joint ventures
+  sliderInput("profit", label = "Profit:",
+              min = 0, max = 100, value = 3.4, step = 0.01),
+  sliderInput("R", label = "Discount rate",min = 0, max = 0.1, value = 0.085, step = 0.001),
+  sliderInput("pi", label = "Inflation rate",min = 0, max = 0.049, value = 0.02, step = 0.001)
+  )
+  
+mainPanel(
+textOutput("res")
+)
+```
+
+```{r context="server"}
+jointVenture <- reactive({
+   s <- input$s
+   pjv <- input$pjv
+   profit <- input$profit
+   pi <- input$pi
+   R <- input$R
+   npv <- s*pjv*profit/(1 - ((1 + pi)/(1+ R)))
+   return(npv)
+})
+output$res <- renderText({jointVenture()})
+```
+&nbsp;
+&nbsp;
+
+
+```{r jointVenture, echo=FALSE}
+question("What happens to the value of the Joint Venture if the probability of success increases?",
+      answer("remain constant"),
+      answer("increase", correct=TRUE),
+      answer("decrease"),
+      answer("increase and later decrease")
+         )
+question("What happens to the value of the Joint Venture if the share of profit that you receive from the JV decreases?",
+      answer("remain constant"),
+      answer("increase"),
+      answer("decrease", correct=TRUE),
+      answer("increase and later decrease")
+         )
+
+question("If the discount rate increases, the value of the Joint Venture also increases",
+      answer("Correct"),
+      answer("Not Correct",correct=TRUE),
+      answer("Neither")
+      
+      )
+
+```
+
+
+### Vessel Day Scheme
+
+
+```{r echo=FALSE}
+sidebarPanel(
+  sliderInput("pvds", label = "Probability of Selling VDS:",
+              min = 0, max = 1, value = 0.85, step = 0.01),
+  sliderInput("d", label = "Vessel Days:",
+              min = 0, max = 10000, value = 100, step = 10), #obtained from prior studies of joint ventures
+  sliderInput("p", label = "Price:",
+              min = 8000, max = 15000, value = 8000, step = 500),
+  sliderInput("Rvds", label = "Discount rate",min = 0, max = 0.1, value = 0.05, step = 0.001),
+  sliderInput("pivds", label = "Inflation rate",min = 0, max = 0.049, value = 0.02, step = 0.001)
+  )
+mainPanel(
+textOutput("vdsres")
+)
+```
+
+```{r context="server"}
+vds <- reactive({
+   pvds <- input$pvds
+   d <- input$d
+   p <- input$p
+   Rvds <- input$Rvds
+   pivds <- input$pivds
+   
+   npv <- (1/1000000)*pvds*d*p/(1 - ((1 + pivds)/(1+ Rvds)))
+   return(npv)
+})
+output$vdsres <- renderText({vds()})
+```
+
+
+```{r vds, echo=FALSE}
+question("What happens to the value of the Vessel Day Scheme if there is a low demand for vessel days?",
+      answer("remain constant"),
+      answer("increase"),
+      answer("decrease", correct=TRUE),
+      answer("increase and later decrease")
+         )
+question("What happens to the value of the Vessel Day Scheme if the inflation rate increase?",
+      answer("remain constant"),
+      answer("increase", correct=TRUE),
+      answer("decrease"),
+      answer("increase and later decrease")
+         )
+question("A higher price of the Vessel Days with a high inflation rate will have a significant................ impact on the Value of the VDS?",
+      answer("Positve", correct = TRUE),
+      answer("Negative"),
+      answer("No")
+      
+      )
+
+```
+
+
+[Link to previous module](https://ffa-econ.shinyapps.io/databackground/)
+[Link to next module](https://ffa-econ.shinyapps.io/staticopenaccess/)
