@@ -1,0 +1,506 @@
+---
+title: "Bio-economic modelling: Dynamic Analysis"
+output: 
+  learnr::tutorial:
+  progressive: true
+runtime: shiny_prerendered
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(learnr) # This is a package for tutorial design
+#library(rootSolve)
+library(DT)
+#library(kobe) # This package is for Kobe plots and related plots
+#library(tidyverse) # This is the tidyverse just in case we need it
+#library(ggvis) # We might need ggvis
+#library(GameTheory) # This package is for coalitional form games
+#library(reticulate) # This library allows interaction with Python code and modules Ackn. Vince Knight
+# you will need lpSolve for this
+#library(lpSolve)
+#library(rje)
+#library(flexdashboard)
+#rm(list=ls())
+```
+
+## Dynamic Open Access Fishery
+
+Under free (costless)  entry and exit from the fishery we can examine how the stock and fishing effort interact over time. This situation corresponds to the case where it takes time for fishing effort and the stock of fish to adjust to the open-access equilibrium that we see in the static open access fishery. The following simulation shows the adjustment over time  to the bioeconomic equilibrium from initial levels of effort and stock. By varying prices and costs you can observe different dynamic behaviour.
+
+
+```{r echo=FALSE}
+ #input settings for dynamic open access
+
+sidebarPanel(
+  sliderInput("p_dynamic", label = "Price of fish:",
+              min = 1, max = 300, value = 200, step = 1),
+  sliderInput("c_dynamic", label = "Costs of catching fish:",
+              min = 0.2, max = 4, value = 1, step = 0.2)
+  )
+
+mainPanel(plotOutput("phase"),
+          plotOutput("time")
+          
+           
+          )
+
+
+```
+
+
+```{r context="server"}
+
+
+
+phase1 <- reactive({
+  
+T <- 100
+X_dynamic <- rep(0,T)
+E_dynamic <- rep(0,T)
+r_dynamic <- 0.1
+q_dynamic <- 0.01
+p_dynamic <- as.numeric(input$p_dynamic)
+c_dynamic <-as.numeric(input$c_dynamic)
+eta <- 1
+X_dynamic[1] <- 1
+E_dynamic[1] <- 1
+K_dynamic <- 1
+
+for (i in c(1:T)){
+  
+  X_dynamic[i+1] <- (1+r_dynamic*(1-X_dynamic[i]/K_dynamic))*X_dynamic[i] - q_dynamic*E_dynamic[i]*X_dynamic[i]
+  E_dynamic[i+1] <- (1 + eta*(p_dynamic*q_dynamic*X_dynamic[i] - c_dynamic))*E_dynamic[i]
+  
+}
+return(X_dynamic)
+})
+
+phase2 <- reactive({
+T <- 100
+X_dynamic <- rep(0,T)
+E_dynamic <- rep(0,T)
+r_dynamic <- 0.1
+q_dynamic <- 0.01
+p_dynamic <- as.numeric(input$p_dynamic)
+c_dynamic <-as.numeric(input$c_dynamic)
+eta <- 1
+X_dynamic[1] <- 1
+E_dynamic[1] <- 1
+K_dynamic <- 1
+
+for (i in c(1:T)){
+  
+  X_dynamic[i+1] <- (1+r_dynamic*(1-X_dynamic[i]/K_dynamic))*X_dynamic[i] - q_dynamic*E_dynamic[i]*X_dynamic[i]
+  E_dynamic[i+1] <- (1 + eta*(p_dynamic*q_dynamic*X_dynamic[i] - c_dynamic))*E_dynamic[i]
+  
+}
+return(E_dynamic)
+})
+
+output$phase <- renderPlot({
+plot(phase1(),phase2(),main="Phase plot dynamic open access fishery",xlab="Stock",ylab="Effort",type="l")
+#lines(phase2())
+
+})
+
+output$time <- renderPlot({
+  plot(phase1(), main = "Time series plot", xlab = "Time", ylab= "Stock,Effort", xlim = c(0,100), ylim =c(0,60),type="l",col="green")
+  lines(phase2(),col="red",lty=2)
+  legend(80,50,legend=c("Stock","Effort"),col=c("red","green"),lty=1:2,cex=0.8)
+})
+
+```
+
+Please note the simulation starts with 1 tonne of fish and one unit of effort. 
+
+### Discussion
+We will discuss this rather than have quiz question.`
+
+## The Capital-Theoretic Approach
+
+The capital theoretic approach to bio-economic modelling employs dynamic optimization emthods to combine economic and biological models in a single integrated bio-economic model.
+
+The key result of the capital theoretic approach is the <b>fundamental equation of renewable resource</b>: 
+
+$$\mbox{Marginal net growth rate of the stock} +\mbox{Marginal stock effect} = \mbox{discount rate}$$
+This equation is sometimes also referred to as the "golden rule". Another way of writing this is
+
+$$\mbox{Marginal net growth rate of the stock} - $$ 
+$$ \frac{\mbox{increase in cost due to increase in stock} \times \mbox{net growth}}{\mbox{Profit margin}} = \mbox{discount rate}$$
+
+The marginal net growth rate of the stock is the slope of the net growth curve and the marginal stock effect measures the marginal economic value of the stock relative to marginal economic value of the catch. Net growth here refers to the natural increase in the fish population minus natural mortality. If the fishery is sustainably managed then nety groth and catch are equal. The term "marginal" in economics means a small change in something due to a small change in another variable. So marginal net growth refers to a small increase in the net growth of the fish population due to an increase in the stock. The marginal stock effect is the ratio of the increase in the annual net value of the fishery due to an increase in the stock divided by the increase in the net value of the fishery due to an increase in the catch. It captures how catch increases with more stock when the fishery is being sustinability exploited to maximise the economic returns.
+
+
+The following graph illustrates how the capital theoretic approach works and how it differs from the static model and management models that are based on maximum sustainable yield. The red curve represent the optimal yield, The intersection of the optimal yield curve and the net growth curve gives you the stock level that satisfies the "golden rule". 
+
+
+```{r echo=FALSE}
+sidebarPanel(
+sliderInput("d",label ="Discount rate", min = 0, max = 1, value = 0, step = 0.01),
+sliderInput("r",label = "Growth rate:", min = 0, max = 4, value  = 0.5, step = 0.1),
+sliderInput("K",label = "Carrying capacity", min = 0, max = 20, value = 10, step = 0.1)
+)
+
+mainPanel(plotOutput("curves"),
+          tableOutput("table")
+          )
+
+```
+
+
+```{r context="server"}
+#plot some graphs here 
+
+
+phi <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  Y <- as.numeric(rep(0,20))
+  X <- as.numeric(c(0:19))
+  Y <- (X*(p*q*X - c)*(d - r*(1-2*X/K)))/c
+  return(Y)
+})
+
+FX <- reactive({
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r) 
+  fx <- as.numeric(rep(0,20))
+  X <- as.numeric(c(0:19))
+  fx <- r*X*(1-X/K)
+  return(fx)
+})
+
+
+output$curves <- renderPlot({plot(FX(), main = c("Bio-economic equilibria"), xlab = "Stock", ylab= "Yield", xaxs="i", yaxs = "i", xlim = c(0,20), ylim =c(0,10),type="l",col="blue")
+  lines(phi(),col="red")
+  legend(15,8,legend=c("F(X)","Y(X)"),col=c("blue","red"),lty=1:2,cex=0.8)
+  
+  })
+
+
+Xstar <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  Xequil <- (K/4)*((c/((p*q*K))+1-d/r)+sqrt((c/(p*q*K) + 1-d/r)^2 +8*c*d/(p*q*K*r)))
+  return(Xequil)
+})
+
+Ystar <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  X <- (K/4)*((c/((p*q*K))+1-d/r)+sqrt((c/(p*q*K) + 1-d/r)^2 +8*c*d/(p*q*K*r)))
+  Y <- (X*(p*q*X - c)*(d - r*(1-2*X/K)))/c
+  return(Y)  
+})
+
+Estar <-  reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  X <- (K/4)*((c/(p*q*K)+1-d/r)+sqrt((c/(p*q*K) + 1-(d/r))^2 +8*c*d/(p*q*K*r)))
+  Eequil <- (r/q)*(1-X/K)
+  return(Eequil)
+  })
+
+mey <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- r*(p*q*K-c)/(2*p*K*q^2)
+  Y <- q*K*(1-(q/r)*E)*E
+  return(Y) 
+})
+
+xmey <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- r*(p*q*K-c)/(2*p*K*q^2)
+  X <- K*(1-(q/r)*E)
+  
+   
+  return(X) 
+})
+
+emey <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+   
+  E <- r*(p*q*K-c)/(2*p*K*q^2)
+  
+  return(E)
+  
+})
+
+msy <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  Y <- r*K/4
+  return(Y)
+})
+
+xmsy <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  X <- K/2
+  return(X)
+})
+
+emsy <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  X <- K/2
+  E <- (r/q)*(1-X/K)
+  return(E)
+})
+
+Yinfinity <- reactive({ 
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- (1-(c/(p*q*K)))*(r/q)
+  Y <- q*K*(1-(q/r)*E) 
+  return(Y)
+})
+
+
+Xinfinity <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- (1-(c/p*q*K))*(r/q)
+  if ( (1-(c/r)*E) >= 0){
+  X <- (1-(c/r)*E)
+  } else {
+    X <- 0
+  }
+  return(X)
+})
+
+
+Einfinity <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- (1-(c/(p*q*K)))*(r/q)
+  return(E)
+})
+
+profitstar <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  X <- (K/4)*((c/((p*q*K))+1-d/r)+sqrt((c/(p*q*K) + 1-d/r)^2 +8*c*d/(p*q*K*r)))
+  Y <- (X*(p*q*X - c)*(d - r*(1-2*X/K)))/c
+  E <- (r/q)*(1-X/K)
+  profit <- p*Y - c*E
+  
+  return(profit)  
+  
+})
+
+
+profitmey <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- r*(p*q*K-c)/(2*p*K*q^2)
+  Y <- q*K*(1-(q/r)*E)*E
+  profit <- p*Y -c*E
+  return(profit)
+  })
+
+
+profitmsy <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  Y <- r*K/4
+  X <- K/2
+  E <- (r/q)*(1-X/K)
+  profit <- p*Y - c*E
+  return(profit)
+})
+
+
+profitinfinity <- reactive({
+  p <- as.numeric(100)
+  q <- as.numeric(0.01) 
+  c <- as.numeric(2)
+  K <- as.numeric(input$K)
+  r <- as.numeric(input$r)
+  d <- as.numeric(input$d)
+  E <- (1-(c/(p*q*K)))*(r/q)
+  Y <- q*K*(1-(q/r)*E) 
+  profit <- p*Y -c*E
+  return(profit)
+})
+
+
+output$table <- renderTable({
+   df <- data.frame(Scenario=c("Bioeconomic equilibrium","MEY","MSY","Open Access (No management)"),Stock=c(Xstar(),xmey(),xmsy(),Xinfinity()),Yield=c(Ystar(),mey(),msy(),Yinfinity()),Effort=c(Estar(),emey(),emsy(),Einfinity()),Profit=c(profitstar(),profitmey(),profitmsy(),profitinfinity()))
+  
+   #df <- data.frame(Scenario=c("Bioeconomic equilibrium","MEY","MSY","Open Access"),X=c(1,2,3,4) #,Y=c(4,5,6,7),E=c(7,8,9,10))
+},include.rownames=FALSE)
+
+```
+
+
+We can now compare the bio-economic equilibrium to Maximum economic yield in a table (see above).
+
+This will allow us to show how the dynamic bio-economic equilibrium differs from maximum economic yield in the static open-access model and to show what impact discounting and interest rates have on making management recommendations. 
+
+### Test your Knowledge
+
+```{r discount, echo=FALSE}
+question("What happens when the discount rate increases?",
+         answer("The stock increases"),
+         answer("The stock decreases",correct=TRUE),
+         answer("Nothing happens"),
+         answer("The stock crashes"),
+          random_answer_order = TRUE,
+    allow_retry = TRUE
+         
+  
+)
+question("What happens when the discount rate decreases?",
+         answer("The stock increases", correct=TRUE),
+         answer("The stock decreases"),
+         answer("Nothing happens"),
+         answer("The stock crashes"),
+          random_answer_order = TRUE,
+    allow_retry = TRUE
+  
+)
+question("What happens to catch when the discount rate increases?",
+         answer("The catch increases"),
+         answer("The catch decreases"),
+         answer("Nothing happens", correct=TRUE),
+         answer("The catch crashes"),
+          random_answer_order = TRUE,
+    allow_retry = TRUE
+)
+question("What happens to profit when the discount rate increases?",
+         answer("Profit increases"),
+         answer("Profit decreases"),
+         answer("Nothing happens", correct=TRUE),
+         answer("The is zero"),
+          random_answer_order = TRUE,
+    allow_retry = TRUE
+         )
+```
+
+
+
+
+## Fishing Gear and the "Golden rule"
+
+Some people find The "golden rule" hard to understand, it can be simplified for some fisheries. To do this we distinguish between schooling and search fisheries. Different fishing gear or fishing technology can lead to different outcomes. We can model different fishing gear by varying the relationship between catch stock and effort.
+To do this we first generalise the way we model catch, insteady of using the traditional multiplicative catch per unit effort function. We use a more general function:
+
+$$Catch = q X^\alpha E^\beta$$
+where $X$ is the stock and $E$ is  and $q$ is catchability When $\alpha=\beta=1$ this is the catch per unit effort function that is frequently used.
+
+If we assume $\alpha=0$ then catch will no longer depnd on the stock:
+
+$$Catch = qE^\beta$$
+If we set $\beta=1$ then we have
+
+$$Catch= qE$$ 
+
+This case corresponds to a schooling fishery, i.e. a fishery where fish school. The use of technology like FAD's amounts to using technology to shift from a search fishery (the usual case) to a schooling fishery. Also note that in this case CPUE is indepoendent of the stock.
+
+For a schooling fishery the "golden rule" reduces to
+
+$$\mbox{Marginal net growth} = \mbox{Discount rate}$$
+The stock effect is zero in this case. This is much easier to understand because it says "leave fish in the water" when the marginal net growth" is greater than the discount rate and catch them (convert them to money) when the discount rate is greater than the marginal net growth rate. The (biological) marginal net growth rate is like the internal rate of return of an investment. 
+
+### Test your knowledge
+
+```{r schooling, echo=FALSE}
+question("what hapens when the discount rate increases?",
+         answer("The stock increases"),
+         answer("The stock decreases", correct=TRUE),
+        random_answer_order = TRUE,
+    allow_retry = TRUE
+  
+)
+```
+
+
+## References
+
+Berck, P., & Perloff, J. M. (1984). An open-access fishery with rational expectations. <em>Econometrica: Journal of the Econometric Society</em>, 489-506.
+
+Gordon, H. S. 1954. “The Economic Theory of a Common Property Resource: The Fishery.” <em>Journal of Po-
+litical Economy</em> 62(2):124–42.
+
+Scott, A. D. 1955. “The Fishery: The Objectives of Sole Ownership.” <em>Journal of Political Economy</em> 63(2):116–24.
+
+Smith, V. L. (1969). On models of commercial fishing. <em>Journal of political economy</em>, 77(2), 181-198.
+
+Warming, J. 1911. “Om Grundrente af Fiskgrunde.” <em>Nationaløkonomisk Tidsskrift</em> 49:499–505.
+
+
+
+[Link to next module](http://ffa-econ.shinyapps.io/strategic/)
+
+[Link to previous module](http://ffa-econ.shinyapps.io/staticopenaccess/)
+
