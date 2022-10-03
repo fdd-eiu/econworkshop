@@ -1,0 +1,713 @@
+---
+title: "Bio-economic modelling: Static open access"
+output: 
+  learnr::tutorial:
+  progressive: true
+runtime: shiny_prerendered    
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(learnr) # This is a package for tutorial design
+#library(kobe) # This package is for Kobe plots and related plots
+library(tidyverse) # This is the tidyverse just in case we need it
+#library(ggvis) # We might need ggvis
+#library(GameTheory) # This package is for coalitional form games
+#library(reticulate) # This library allows interaction with Python code and modules Ackn. Vince Knight
+# you will need lpSolve for this
+#library(lpSolve)
+#library(rje)
+#library(flexdashboard)
+#rm(list=ls())
+```
+
+## Bioeconomic modelling and analysis
+
+-	Why manage a fishery?
+-	What is a bioeconomic model?
+-	What can a bioeconomic model be used for?
+
+### Why manage a fishery?
+
+Fisheries, in particular high sees fisheries are an example of common pool resources which may suffer from the problem of the ["Tragedy of the Commons"](http://science.sciencemag.org/content/162/3859/1243.full) [(Garrett Hardin)](https://www.nytimes.com/2003/10/28/us/garrett-hardin-88-ecologist-who-warned-about-excesses.html). In the case of fisheries, this means there is a natural tenddency for fishermen to overfish the stock in the absence of management or other controls. 
+
+### What is a bioeconomic model?
+
+A bio-economic model combines economic objectives such as profit, rent or utility maximization with a biological biological population model or data. 
+Bio-economic models vary considerably in their degree of sophitication in both the economic and the biological dimensions
+
+### Why are we interested in Bio-economic Modelling?
+
+* Profitability drives fisheries:<br>
+    * Fisheries drive government revenue licensing/sale of days<br>
+    * Port fees<br>
+    * Transhipment, etc.
+   
+- Profitable fisheries drive employment:
+    - Directly as crew
+    - Directly as observers
+    - Indirectly through onshore (processing, markets, etc.)
+
+### What can a bioeconomic model be used for?
+
+- To assess whether a fishery is being overfished or should be expanded
+- To assess the economic consequences of fisheries management measures
+- To assess the relationship between catch and fishing effort
+- To assess trade-offs between catching fish today or waiting to catch fish in the future 
+
+
+### Some examples of trends for the Southern long-line Tuna fishery
+
+<b>Economics matter</b>
+
+- The SP-ALB stock is biologically healthy and well above the limit reference point, BUT the fishery is becoming less and less profitable
+- Maintaining catch becomes less financially viable with declining catch rates, because more cost will need to be incurred to catch the same amount of fish
+- Less number of financially viable boats means:
+    - less amount of licence revenue to government
+    - less security of domestic boats supplying food to the local market
+
+<div style="-webkit-column-count: 2; -moz-column-count: 2; column-count: 2; -webkit-column-rule: 1px dotted #e0e0e0; -moz-column-rule: 1px dotted #e0e0e0; column-rule: 1px dotted #e0e0e0;">
+<div id="left">
+&nbsp;
+![Example: Southern longline fishery](images\Picture1b.png){width=90%}
+&nbsp;
+&nbsp;
+</div>
+
+<div id ="right">
+<table align="center">
+<th>Prices</th>
+<tr><td>ALB</td><td>2500</td></tr>
+<tr><td>BET</td><td>7800</td></r>
+<tr><td>YEN</td><td>5300</td></tr>
+<tr><td>OTH</td><td>2500</td><tr>
+<tr><th>Costs</th></tr>
+<tr><td>Per hook </td><td align="right">1.1</td></tr>
+</table>
+</div>
+
+</div>
+
+
+&nbsp;
+&nbsp;
+
+
+![Example: Southern longline fishery](images\Picture1c.png)
+
+
+### Fisheries economics: The Fish Population
+
+We will introduce you to some basic fisheries economics concepts. The basic idea that we want to convey is that linking economic analysis to fisheries biology has important implications for fisheries management.
+
+Consider a natural fish stock (population) that grow over time. The stock of fish is determined by two key parameters. The growth rate of the population r and the carrying capacity of the environment, or the available resources K.
+
+Try changing the growth rate of the fish poulation and the carrying capacity using the sliders to see what happen=s to the graph of fish population plotted against time.
+
+```{r echo=FALSE}
+# This is r code for the first set of sliders
+
+sliderInput("r", label = "growth rate:",
+              min = 0.2, max = 4, value = 1, step = 0.2)
+sliderInput("K", label ="carrying capacity:", min=1, max=20, value = 10, step=0.2)
+
+plotOutput("popdyn")
+```
+
+```{r echo=FALSE, context="server"}
+# This is the code for the poulation dynamics this needs to be embedded in a reactive() function for the sliders to work
+
+data <- reactive({
+x <- rep(0,20)
+x[1] <- 1
+r <- as.numeric(input$r)
+K <- as.numeric(input$K)
+for(i in 1:length(x)){
+x[i+1] <- x[i] + r*x[i]*(1-x[i]/K)
+}
+return(x)
+})
+
+output$popdyn <- renderPlot({ 
+
+plot(data(),main="Pop dynamics",xlab="Time",ylab="Stock",xlim = c(0,20),ylim=c(0,30), type="l")
+  
+})
+```
+
+### Test your Knowledge
+
+### Exercise 1
+
+Try answeriung the following questions!
+
+
+```{r quiz, echo=FALSE}
+# This is a quiz for trainees to check their knowledge we should do one for each exercise
+
+quiz(
+  question("What happens to the stock when you increase the growth rate above:",
+    answer("Nothing"),
+    answer("Something"),
+    answer("The stock fluctuates", correct = TRUE),
+    answer("The stock goes down"),
+    random_answer_order = TRUE,
+    allow_retry = TRUE
+   
+      
+  )
+ 
+)
+```
+
+### Introducing Fishing
+
+If we add fishing to the example the population dynamics changes.
+
+fishing mortality is not only driven by the competition between fish for resources (density dependent mortality) but also by fishing and the level of fishing effort.
+
+If we assume that the catch per unit effort is proportional to stock $x$ then
+
+
+$$CPUE = c x$$
+
+The change in the stock over time is given by the difference between the nature growth of the stock and harvest or catch of fish. Modifying our population model to include th total catch, we get:
+
+$$\mbox{Total catch} = CPUE \times Effort$$
+
+Our population now looks like:
+
+```{r echo = FALSE}
+
+sidebarPanel(
+sliderInput("r1", label = "Growth rate:",
+              min = 0.2, max = 4, value = 1, step = 0.2),
+
+sliderInput("K1", label ="carrying capacity:", min=1, max=20, value = 10, step=0.2),
+
+sliderInput("c", label="catchability:",min=0, max=1,value = 0.5,step = 0.1),
+
+sliderInput("E",label ="Effort:", min = 0, max = 10, value = 5, step = 0.2)
+
+)
+
+mainPanel(plotOutput("popdyn2"))
+```
+
+
+```{r context="server"}
+
+data1 <- reactive({
+x1 <- rep(0,20)
+E1 <- rep(0,20)
+x1[1] <- 1
+r1 <- as.numeric(input$r1)
+K1 <- as.numeric(input$K1)
+c <- as.numeric(input$c)
+
+
+for(i in 1:length(x1)){
+E1[i] <- as.numeric(input$E)
+x1[i+1] <- x1[i] + r1*x1[i]*(1-x1[i]/K1) - c*x1[i]*E1[i]
+}
+return(x1)
+})
+
+output$popdyn2 <- renderPlot({ 
+
+plot(data1(),main="Pop dynamics",xlab="Time",ylab="Stock",xlim = c(0,20),ylim=c(0,30), type="l")
+  
+})
+```
+
+&nbsp;
+&nbsp;
+
+### Test your knowledge
+
+```{r pop, echo = FALSE}
+question("What happens to the stock when you increase effort?",
+         answer("The stock goes up"),
+         answer("The stock goes down", correct=TRUE),
+         answer("Nothing happens"),
+         answer("The stock grows more slowly"),
+         random_answer_order = TRUE,
+        allow_retry = TRUE
+         )
+question("What happens to the variation in the stock when you increase effort (other things equal)?",
+         answer("It decreases", correct=TRUE),
+         answer("It increases"),
+         answer("Nothing happens"),
+         answer("There is no variation"),
+         random_answer_order = TRUE,
+         allow_retry = TRUE
+         )
+
+```
+
+## Adding economics
+
+Now let us add prices(p) and costs (c) of catching fish. However to keep things simple we will keep the biology fixed (you can't adjust, growth rates, capacity or catchability).
+
+```{r echo=FALSE}
+
+sidebarPanel(
+  sliderInput("p", label = "Price of fish:",
+              min = 0.2, max = 4, value = 1, step = 0.2),
+  sliderInput("c1", label = "Costs of catching fish:",
+              min = 0.2, max = 4, value = 1, step = 0.2),
+  sliderInput("E2",label ="Effort:", min = 0, max = 10, value = 5, step = 0.2),
+  textOutput("your_profit")
+ 
+  
+)
+
+mainPanel(plotOutput("popdyn3"),
+          plotOutput("profit")
+           
+          )
+
+```
+
+
+
+```{r context="server"}
+
+data2 <- reactive({
+x2 <- rep(0,20)
+E3 <- rep(0,20)
+Profit <- 1:20
+x2[1] <- 1
+r2 <- 2.4
+K2 <- 20
+c2 <- 0.5 # This is catchability coefficient
+p <- as.numeric(input$p)
+cost <- as.numeric(input$c1)
+
+for(i in 1:length(x2)){
+E3[i] <- as.numeric(input$E2)
+x2[i+1] <- x2[i] + r2*x2[i]*(1-x2[i]/K2) - c2*x2[i]*E3[i]
+Profit[i] <-p*c2*E3[i]*x2[i] - (cost/2)*(c2*E3[i])^2
+
+}
+
+TotalProfit <- as.numeric(sum(Profit))
+return(x2)
+
+
+})
+
+#The following computes profit. However to do this, need to split it into three reactive components
+
+
+data3 <- reactive({
+x2 <- rep(0,20)
+E3 <- rep(0,20)
+Profit <- 1:20
+x2[1] <- 1
+r2 <- 2.4
+K2 <- 20
+c2 <- 0.5 # This is catchability coefficient
+p <- as.numeric(input$p)
+cost <- as.numeric(input$c1)
+  for(i in 1:length(x2)){
+  E3[i] <- as.numeric(input$E2)
+  x2[i+1] <- x2[i] + r2*x2[i]*(1-x2[i]/K2) - c2*x2[i]*E3[i]
+  Profit[i] <-p*c2*E3[i]*x2[i] - (cost/2)*(c2*E3[i])^2
+  }
+  TotalProfit <- as.numeric(sum(Profit))
+  return(Profit)
+
+  })
+
+data4 <- reactive({
+  
+x2 <- rep(0,20)
+E3 <- rep(0,20)
+Profit <- 1:20
+x2[1] <- 1
+r2 <- 2.4
+K2 <- 20
+c2 <- 0.5 # This is catchability coefficient
+p <- as.numeric(input$p)
+cost <- as.numeric(input$c1)
+  for(i in 1:length(x2)){
+  E3[i] <- as.numeric(input$E2)
+  x2[i+1] <- x2[i] + r2*x2[i]*(1-x2[i]/K2) - c2*x2[i]*E3[i]
+  Profit[i] <-p*c2*E3[i]*x2[i] - (cost/2)*(c2*E3[i])^2
+  }
+  TotalProfit <- as.numeric(sum(Profit))
+  return(TotalProfit)
+  
+})
+
+output$popdyn3 <- renderPlot({ 
+
+plot(data2(),main="Pop dynamics",xlab="Time",ylab="Stock",xlim = c(0,20),ylim=c(0,30), type="l",col="green")
+
+})
+
+output$profit <- renderPlot({
+  
+  plot(data3(),main="Profit",xlab="Time",ylab="$",xlim = c(0,20),ylim=c(-20,30),type="l",col="red") 
+  
+})
+
+
+output$your_profit <-renderText({paste("Your Profit:",data4())})
+
+#ok this works!!
+
+```
+
+
+## Static Open Access Fishery
+
+Fisheries catches or yields depend on effort. Vary the Catchability , growth rate and carrying capacity using the sliders. What happens to the graph.
+
+
+```{r echo=FALSE}
+
+sidebarPanel(
+sliderInput("q",label = "Catchability", min = 0 , max = 1, value = 0.3 , step = 0.1),
+sliderInput("r3",label = "Growth rate", min = 0, max =10, value = 4, step =0.2),
+sliderInput("K3", label = "Carrying capacity", min = 1, max = 20, value = 14, step = 1)
+)
+
+mainPanel(
+
+  plotOutput("effort"),
+  plotOutput("net")
+  
+)
+
+```
+
+
+```{r context="server"}
+
+# Ok, this is a little tricky need to plot a curve rather than data
+
+yeffort <- reactive({ 
+q <- as.numeric(input$q)
+K3 <- as.numeric(input$K3)
+r3 <- as.numeric(input$r3)
+Y <- as.numeric(rep(0,20))
+E4 <- as.numeric(c(0:19))
+Y <- as.numeric(q*K3*E4*(1-(q/r3)*E4))
+
+return(Y)
+})
+
+fnet <- reactive({ 
+#q <- as.numeric(input$q)
+K3 <- as.numeric(input$K3)
+r3 <- as.numeric(input$r3)
+x4 <- as.numeric(c(0:30))
+#E4 <- as.numeric(c(0:19))
+Fnet <- as.numeric(rep(0,30))
+Fnet <- as.numeric(r3*x4*(1-x4/K3))
+return(Fnet)
+})
+
+output$effort <- renderPlot({
+  
+  plot(yeffort(), main="Yield-Effort Curve", xlab ="Effort", ylab="Yield", xlim=c(0,30), ylim=c(0,30),type="l")
+  
+  })
+
+output$net <- renderPlot({
+  
+  plot(fnet(), main="Net growth Curve", xlab ="SSB", ylab="Net Fish Population Growth", xlim=c(0,30), ylim=c(0,40),type="l") #output from this.
+  
+  })
+
+```
+
+### Maximum Economic Yield
+
+If we multipy yields by price we obtain revenue as a function of effort. If we also assume that total cost, increases proportionally with more effort, then total cost will be a straight line
+
+Maximum economic yield is the catch where the total rent to the fishery is maximised.
+
+- Management question:
+- What is the 'optimum' number of vessels that provides Maximum Economic Yield (MEY) for the fishery?
+(at the national, sub-regional or regional WCPO level??)
+- MEY: the point at which the difference between the revenue from fishing and the cost of fishing is the greatest, i.e. fishery profit is the largest
+
+
+
+```{r echo=FALSE}
+sidebarPanel(
+sliderInput("q5",label = "Catchability", min = 0 , max = 1, value = 0.3 , step = 0.1),
+sliderInput("r5",label = "Growth rate", min = 0, max =10, value = 4, step =0.2),
+sliderInput("K5", label = "Carrying capacity", min = 1, max = 20, value = 10, step = 1),
+sliderInput("p5", label = "Price of fish:",
+              min = 0.2, max = 4, value = 2, step = 0.2),
+  sliderInput("c5", label = "Costs of catching fish:",
+              min = 0.2, max = 4, value = 1, step = 0.2)
+)
+
+
+mainPanel(
+#  
+  plotOutput("revenue")
+  
+)
+
+```
+
+
+```{r context="server"}
+
+Reffort <- reactive({ 
+q <- as.numeric(input$q5)
+K <- as.numeric(input$K5)
+r <- as.numeric(input$r5)
+R <- as.numeric(rep(0,20))
+E <- as.numeric(c(0:19))
+p <- as.numeric(input$p5)
+R <- as.numeric(p*(q*K*E*(1-(q/r)*E)))
+
+return(R)
+})
+
+cost <-reactive({
+c <- as.numeric(input$c5)
+E <- as.numeric(c(0:19))  
+costline <- as.numeric(c*E)
+return(costline)
+})
+
+output$revenue <- renderPlot({
+  plot(Reffort(), main="Maximum Economic Yield", xlab ="Effort", ylab="$", xlim=c(0,30), ylim=c(0,30),type="l")
+  lines(cost())
+  
+  })
+ 
+
+
+```
+
+
+## The Fisheries Supply Curve
+
+The fisheries supply curve is different from the standard microeconomics textbook supply curve. The fisheries supply curve plotted below corresponds to the supply curve for the high seas, when the fishery is operating at the point where rent is fully dissipated.
+
+```{r echo=FALSE}
+
+#sidebarPanel(
+ # sliderInput("q",label="Catchability",min = 0.001,max = 1,value = 0.1,step=0.1),
+  #sliderInput("r",label="Growth rate",min = 0, max = 5,value = 0.8,step = 0.1),
+  #sliderInput("c",label = "Cost", min = 0, max = 10,value = 1, step = 1),
+  #sliderInput("K",label = "Carrying capacity", min = 1, max = 1000,value = 100,step =1)
+#)
+
+#mainPanel(plotOutput("supply"))
+
+```
+
+```{r supply, echo=FALSE,fig.width=5,fig.height=5}
+
+#p() <-reactive({
+
+ # p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+
+  #fun <- function(x) {
+   #     q <- as.numeric(input$q)
+        #q <- 0.1  
+    #    r <- as.numeric(input$r)
+     #   c <- as.numeric(input$c)
+      #  K <- as.numeric(input$K)
+       # res <- (r*c/(x*q))*(1-c/(x*q*K))
+      #return(res)
+  #}
+  
+#})
+
+
+
+#renderPlot({p() + stat_function(fun = fun) + ylim(0,50) + xlim(0,5) + xlab("Price") + ylab("Catch") + ggtitle("Supply curve") + coord_flip()})
+
+```
+
+```{r supply2, echo=FALSE,fig.width=5,fig.height=5}
+
+p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x))
+  
+
+  fun <- function(x) {
+  #q <- as.numeric(input$q)
+  q <- 0.1  
+  r <- 0.8
+  c <- 1
+  K <- 100
+  res <- (r*c/(x*q))*(1-c/(x*q*K))
+  return(res)
+  }
+  
+  p + stat_function(fun = fun) + ylim(0,50) + xlim(0,5) + xlab("Price") + ylab("Catch") + ggtitle("Supply curve - High seas") + coord_flip() 
+
+```
+
+```{r supply3, echo=FALSE,fig.width=5,fig.height=5}
+
+p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x)) 
+  
+
+  fun <- function(x) {
+  #q <- as.numeric(input$q)
+  q <- 0.1  
+  r <- 0.8
+  c <- 1
+  K <- 100
+  E <- r*(x*q*K - c)/(2*x*K*q**2)
+  y <- (q * K*(1 - (q/r)*E) * E)
+  return(y)
+  }
+  
+  #print(fun)
+  
+  p + stat_function(fun = fun) + ylim(0,50) + xlim(0,5) + xlab("Price") + ylab("Catch") + ggtitle("Supply curve  in Zone at MEY") + coord_flip() 
+
+```
+ 
+If the fishery is operating else wehere the supply curve may be different. For example at MEY we still get a suppy response but SY
+
+```{r supply4, echo=FALSE,fig.width=5,fig.height=5}
+
+p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x)) 
+  
+
+  fun <- function(x) {
+  #q <- as.numeric(input$q)
+  q <- 0.1  
+  r <- 0.8
+  c <- 1
+  K <- 100
+  #E <- r*(x*q*K - c)/(2*x*K*q**2)
+  y <- (r*K/4)
+  return(y)
+  }
+  
+  #print(fun)
+   
+  p + stat_function(fun = fun) + ylim(0,50) + xlim(0,5) + xlab("Price") + ylab("Catch") + ggtitle("Supply curve at MSY") + coord_flip() 
+
+```
+
+
+What happens if we fish at a target reference point of 56% of unfished biomass:
+
+```{r supply5, echo=FALSE,fig.width=5,fig.height=5}
+
+p <- ggplot(data = data.frame(x = 0), mapping = aes(x = x)) 
+  
+
+  fun <- function(x) {
+  #q <- as.numeric(input$q)
+  q <- 0.1  
+  r <- 0.8
+  c <- 1
+  K <- 100
+  E <- (r/q)*(1 - 0.56)
+  y <- (q*0.56*K*E)
+  return(y)
+  }
+  
+  #pri0nt(fun)
+   
+  p + stat_function(fun = fun) + ylim(0,50) + xlim(0,5) + xlab("Price") + ylab("Catch") + ggtitle("Supply curve at TRP") + coord_flip() 
+
+```
+
+In this case, because unfished biomass is not impacted by prices, the supply of fish is perfectly inelastic (a one percent change in price results in a zero percent change in catch). 56% of unfished biomass is not far from 50% of unfished biomass or MSY.
+
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+
+
+### Exercise
+
+```{r quiz-2, echo=FALSE }
+# This is a quiz for trainees to check their knowledge we should do one for each exercise
+
+quiz(
+  question("What is MEY?",
+         answer("The stock level at which catch (yield) is maximised "),
+         answer("The growth rate at which the stock level is maximised"),
+         answer("The stock level at which fishermen maximise their profit"),
+         answer("The amount of catch at which the economic rent(return) of the fishery is maximised",correct=TRUE),
+         random_answer_order = TRUE,
+    allow_retry = TRUE),
+ question("How does MEY differ from MSY?",
+         answer("MEY is great than MSY"),
+         answer("MEY is typically equal to MSY"),
+         answer("MEY is typically less than MSY", correct=TRUE),
+         answer("MEY can't be compared to MSY"),
+         random_answer_order = TRUE,
+    allow_retry = TRUE
+         ),
+ question("Why would managers want to target MEY?",
+         answer("Targeting MEY results in a larger stock and more income for the fishery",correct=TRUE),
+         answer("Targeting MEY results in the largest possible catch"),
+         answer("Targeting MEY results in more effort than targeting MSY"),
+         random_answer_order = TRUE,
+    allow_retry = TRUE 
+         ),
+ question("What factors influence MSY",
+          answer("MSY is influenced by the price of fish"),
+          answer("MSY is influenced by the growth rate and the carrying capacity of the stock", correct=TRUE),
+          answer("MSY is influenced by the costs of fishing"),
+          answer("MSY is influenced by the managers personal preferences"),
+          random_answer_order = TRUE,
+    allow_retry = TRUE
+          ),
+question("Holding all else constant, if the price of fish increases-should you fish more (license more boats) or less?",
+         answer("Yes",correct=TRUE),
+         answer("No"),
+         answer("Only if the stock is above MSY"),
+         answer("Only if the stock is above MEY"),
+         random_answer_order = TRUE,
+    allow_retry = TRUE
+         ),
+question("Holding all else constant, if the price of fuel increases-should you fish more (license more boats) or less?",
+         answer("Fish at the same"),
+         answer("Fish more"),
+         answer("Keep effort the same"),
+         answer("Fish-less or reduce effort", correct=TRUE),
+         random_answer_order = TRUE,
+    allow_retry = TRUE
+         ),
+  question("If entry to the fishery is costless effort will expand to a point corresponding to:",
+    answer("MSY"),
+    answer("MEY"),
+    answer("Zero-rent", correct = TRUE),
+    answer("None of the above"),
+    random_answer_order = TRUE,
+    allow_retry = TRUE
+    
+  )
+ 
+)
+```
+
+## Summary
+
+- The maximum yield that is biologically sustainable may not be the most profitable yield for the fishery
+- Why?
+    - It costs money to fish - e.g. fuel, bait, crew, repairs and maintenance, fishing licence etc.
+    - Most of which must be paid even if you catch less fish (e.g. transhipment, freight and packaging more likely to vary with amount of fish caught)
+    - As more effort is put into the fishery, the cost of fishing increases. BUT, catch is not increasing at the same rate!
+- As a stock is depleted away from its unfished level of biomass (i.e. abundance is reducing), it becomes harder to find fish of that stock. So catch per each unit of effort becomes less. That is, it costs more to catch the same amount of fish (and earn same amount of revenue)
+- The level of effort that generate the most amount of profit (EMEY) in a fishery will depend on:
+    - The amount of fish caught relative to effort expended (catch per unit of effort)
+    - The cost of fishing per unit of effort
+    - The price per unit of fish caught
+
+[Previous topic](https://ffa-econ.shinyapps.io/projectassess/)
+[Next topic](https://ffa-econ.shinyapps.io/dynamics/)
