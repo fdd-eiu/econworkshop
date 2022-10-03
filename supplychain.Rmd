@@ -1,0 +1,672 @@
+---
+title: "Supply chain management in fisheries"
+author: "Rodney Beard"
+date: "December 3, 2018"
+output: 
+  learnr::tutorial:
+  progressive: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(SCperf)
+library(orloca)
+library(lpSolve)
+library(igraph)
+library(tidyverse)
+library(DT)
+library(orloca)
+```
+
+## Introduction
+
+Supply chain management draws on the following topics:  
+
+- Inventory management
+- Material requirements planning
+- Scheduling
+- Transportation
+- Vehicle routing
+- Facility Location
+- Value chain analysis
+
+Definition of supply chain management (Keith Oliver):
+
+``Supply chain management is the process of planning , implementing, and controlling the operations of the supply chain with the purpose to satsify customer requirements as efficiently as possible. Supply chain management spans all movement and storage of raw materials , work in process inventory, and finished goods from point of origin to point of consumption''.
+
+The death of supply chain management has also been announced [The death of supply chain management (Harvard Business Review)](https://hbr.org/2018/06/the-death-of-supply-chain-management).
+
+In order to achieve efficiency we use optimization models. Typically we minimize costs subject to a number of constraints.
+
+
+
+## Inventory Management
+
+### Basic inventory concepts
+
+
+Stock on hand = how much of an item is held in inventory
+
+Outstanding orders = orders to supply the item 
+
+Backorders = units demanded but not yet delivered
+
+Inventory position = stock on hand + outstanding orders - backorders
+
+
+## The Economic Order Quantity (EOQ) Model
+
+This model is the basic determinstic inventory control model used in inventory management. If you consider a fish processing plant such as a cannery it doesn't just need to store fish but will also hold some inventory consisting of other materials, for example, metal for the cans. Oil, paper for labels, etc. The model tells you how many items to order, how frequently they should be ordered and how much it will cost you based on the following: the demand during the planning period, the set-up costs for the machinery, the costs per order, the holding or storage costs and the shortage penalty or opportunity costs of a shortage.
+
+The total costs of inventory management are the sum of the storage costs plus the costs of ordering. 
+
+```{r eoq, echo=FALSE}
+
+sidebarPanel(
+  #sliderInput("Q",label="Q",min=0,max=10,value=5,step=1),
+  sliderInput("d",label="Demand (d)",min=0,max=10,value=1,step=1),
+  sliderInput("k",label="Set-up or ordering costs (k)",min=0,max=10,value=1,step=1),
+  sliderInput("h",label="Holding or storage costs (h)",min=0,max=10,value=1,step=1)
+  #sliderInput("b",label="Backorder penalty (b)",min=0,max=10,value=0,step=1)
+)
+
+mainPanel(plotOutput("plot"))
+
+
+
+
+```
+
+```{r context="server",echo=FALSE}
+
+eoqstar <- reactive({
+  d <- as.numeric(input$d) # demand
+  #Q <- as.numeric(input$Q)   # batch quantity
+  k <- as.numeric(input$k) # ordering or set-up cost <
+  h <- as.numeric(input$h) # holding cost
+  b <- 0 # shortage cost/backorders
+  res <- EOQ(d,k,h,b)
+  Qstar <- c(res[[1]],0,res[[1]],0)
+  Time <- c(0,res[[2]],res[[2]],2*res[[2]])
+  df <- data.frame(cbind(Time,Qstar))
+  return(df)
+  })
+
+
+output$plot <- renderPlot(plot(eoqstar(), main = "EOQ", xlab = "Time", ylab = "Q", type = "l"))
+
+```  
+
+To calculate the economic order quantity the following formula can be used assuming there are no backorders.
+
+$$Q^{*} =\sqrt{\frac{2kd}{h}}$$
+For example assume a demand of 4 tonnes per day a set-up cost of 1 and a holding cost of 1. Using both the formula and the interactive graph verify 2 tonnes per day should be ordered.
+
+For perishable goods such as fish a simple way to modify this formula is to choose the economic order quantity to be th}e smaller of $Q^{*}$ and the demand rate (d) times the lifetime of the product. In otherwords order the economic order quantity if demand is so high that costs are minimimized at a point where the fish don't perish during storage. Otherwise order fish in sufficient quantity to replace those that have reached their useby date. Likewise if $Q^*$ exceeds the storage capacity then one would simply stock to capacity, if it is less than the storage capacity then one would order $Q^{*}$.  
+
+The model assumes produce arrives as soon as it is ordered, in practice delivery takes time (leadtime). Leadtimes are easily included in the model.  
+  
+
+## The Newsvendor Problem and the Sale of Fresh Fish
+
+The newsvendor problem is an example of a perishable goods inventory problem. The name comes from a newspaper seller who needs to decide how many newspapers to order the day before, but is uncertain ho many can be sold, because that will depend on the "headlines" and the demand tomorrow. Newspapers aren only really worth buying on the day and don't keep their value more than a day. The problem is similar to someone who sells fresh fish, the fish don't keep, demand for fish might be uncertain, how many fish should the fresh fish seller purchase from the boat? To work this out, we need need to know the mean demand for fish during the planning period and the standard deviation of fish demand, as well as the price one plans to sell fish and the unit cost of purchasing fish from fishermen.
+
+<p>
+
+```{r newsvendor, echo=FALSE}
+
+sidebarPanel(
+sliderInput("m",label="Mean demand (average no. of fish sold)",min=0, max=10,value=1,step=1),  
+sliderInput("sd",label="Standard deviation",min=0,max=10,value=0,step=1),
+sliderInput("p",label="Price",min=0,max=10,value=5,step=1),
+sliderInput("c",label="Unit cost",min=0,max=10,value=2,step=1)
+)
+
+mainPanel(plotOutput("hist"))
+
+```
+
+
+```{r context="server", echo=FALSE}
+
+nb <- reactive({
+  m <- as.numeric(input$m)
+  sd <- as.numeric(input$sd)
+  p <- as.numeric(input$p)
+  c <- as.numeric(input$c)
+  res <- Newsboy(m,sd,p,c,0)
+  #plt <- barplot(res)
+  return(res)
+})
+
+
+output$hist <- renderPlot({
+  barplot(nb())
+  })
+
+```
+
+
+Where Q is the order quantity, SS the safety stock, ExpP, the expected profit, ExpC the expected cost, CV the coefficient of variation of the demand (variation relative to the mean demand), the fraction of demand served from the available stock and z the safety factor (set from probability tables).   
+
+## Time Varying Demand and Seasonal Effects
+
+Demand for non-perishable items at a canary. Canning may vary seasonally, for example during FAD closure periods when the supply of fish is low the need for canning will be lower so demand for cans, labels, oil etc. will also be lower.  When should these material be re-ordered and how should their inventory be managed?
+
+To solve an inventory management problem with time varying demand the Wagner-Whitin method can be used.
+
+- we need to know the demand per unit time
+
+-  the set-up cost per unit and per period
+
+- the holding (storage) cost per unit and per period
+
+### Example 
+
+The sequence of demand is 3,2,3,2 for each of four periods and the set-up costs are 2 and the holding costs are 0.2 This produces the output of costs in the table below.
+
+The output table of the Wagner-Whitin model can be interpreted as follows. The rows represent the period in which the last order is placed and the columns represent a partial planning horizon. Each entry represents the cost of production under some production plan. To find the optimal production plan look for the row minimum. the decision is to produce in each period enough to cover demand up to that row minimum.
+
+Consider the result:
+
+<div>
+```{r ww, echo=FALSE}
+
+
+#sidebarPanel(
+#numericInput("x1",label="period 1 demand",min=0, max=10,value=3.0,step=0.1),  
+#numericInput("x2",label="period 2 demand",min=0, max=10,value=2.0,step=0.1),  
+#numericInput("x3",label="period 3 demand",min=0, max=10,value=3.0,step=0.1),  
+#numericInput("x4",label="period 4 demand",min=0, max=10,value=2.0,step=0.1),  
+#numericInput("a",label="Setup costs",min=0,max=10,value=2.0,step=1.0),
+#numericInput("h",label="Holding costs",min=0,max=1,value=0.2,step=0.1)
+
+#)
+
+mainPanel(
+  dataTableOutput("ww")
+)
+
+
+```
+</div>
+
+```{r context="server", echo=FALSE}
+
+wwmod <- reactive({
+x <- c(input$x1,input$x2,input$x3,input$x4) # demands
+a <- input$a
+hold <- input$h
+x <- c(x[1],x[2],x[2],x[4])
+x <- as.numeric(x)
+#a <- 2
+#hold <- 0.2
+#res <- data.frame(WW(x,a,hold)[3])
+res <- data.frame(WW(c(3,2,3,2),2,0.2)[3],method="backward")
+return(res)
+})
+
+
+
+output$ww <- renderDataTable({
+  wwmod()
+  })
+
+
+
+```
+
+
+### 
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+
+
+## Transportation
+
+Transportation problems involve determining how  much to ship between different locations at minimum cost. Imagine a series of port or canneries that need to ship fish or cans of tuna to retail markets. How much should be sent from each supplier to each market? 
+
+### Example
+
+Consider three canneries that ship cans of fish to four different destinations.
+
+<p>
+<table border=T>
+<tr>
+<th>Transport costs</th><th colspan="4">Warehouse</th><th>Supply</th>
+</tr>
+<tr><td></td><td>1</td><td>2</td><td>3</td><td>4</td><td></td>
+</tr>
+<tr><td>A</td><td>464</td><td>513</td><td>654</td><td>867</td><td>75</td></tr>
+<tr><td>B</td><td>352</td><td>416</td><td>690</td><td>791</td><td>125</td></tr>
+<tr><td>C</td><td>995</td><td>682</td><td>388</td><td>685</td><td>100</td></tr>
+<tr><td>Demand</td><td>80</td><td>65</td><td>70</td><td>85</td><td></td></tr>
+</table>
+</p>
+
+Later we will look at how varying the supply available at each port and the demands at each warehouse impacts the optimal solution.
+
+The transportation network is depicted as a graph with the transportation costs of each edge/route displayed:
+
+```{r transport,echo=FALSE}
+
+textOutput("transport")
+plotOutput("graph")
+
+```
+
+
+How many vehicles should be sent from each port to each warehouse? Assuming all vehicles are the same size.
+Demands of warehouses might come from the EOQ model of each warehouse.
+
+To solve this problem we minimize the total transportation costs assuming that demands are met and the total supply at each port is not exceeded.
+
+The solution is:
+
+```{r echo=FALSE}
+
+sidebarPanel(
+  sliderInput("w1", label = "Supply (port A):",
+              min = 0, max = 200, value = 75, step = 10),
+  sliderInput("w2", label = "Supply (port B):",
+              min = 0, max = 200, value = 125, step = 10),
+  sliderInput("w3", label = "Supply (port C):",
+              min = 0, max = 200, value = 100, step = 10),
+  sliderInput("w4", label = "Demand (warehouse 1):",
+              min = 0, max = 200, value = 80, step = 10),
+  sliderInput("w5", label = "Demand (warehouse 2):",
+              min = 0, max = 200, value = 65, step = 10),
+  sliderInput("w6", label = "Demand (warehouse 3):",
+              min = 0, max = 200, value = 70, step = 10),
+  sliderInput("w7", label = "Demand (warehouse 4):",
+              min = 0, max = 200, value = 85, step = 10)
+)
+
+mainPanel(
+  
+  dataTableOutput("table")
+  
+  )
+```
+
+```{r context="server", echo=FALSE}
+
+transport <- reactive({
+costs <- matrix(NA,nrow=3,ncol=4)
+
+costs[1,1] <- 464
+costs[1,2] <- 513
+costs[1,3] <- 654
+costs[1,4] <- 867
+costs[2,1] <- 352
+costs[2,2] <- 416 
+costs[2,3] <- 690
+costs[2,4] <- 791
+costs[3,1] <- 995
+costs[3,2] <- 682
+costs[3,3] <- 388
+costs[3,4] <- 685
+
+f.obj <- c(costs[1,1],costs[1,2],costs[1,3],costs[1,4],
+           costs[2,1],costs[2,2],costs[2,3],costs[2,4],
+           costs[3,1],costs[3,2],costs[3,3],costs[3,4])
+
+f.con <- matrix(c(1,1,1,1,0,0,0,0,0,0,0,0,
+                  0,0,0,0,1,1,1,1,0,0,0,0,
+                  0,0,0,0,0,0,0,0,1,1,1,1,
+                  1,0,0,0,1,0,0,0,1,0,0,0,
+                  0,1,0,0,0,1,0,0,0,1,0,0,
+                  0,0,1,0,0,0,1,0,0,0,1,0,
+                  0,0,0,1,0,0,0,1,0,0,0,1),nrow=7,byrow=TRUE) # ok this is now correct
+
+f.dir <- c(rep("<=",3),rep(">=",4))
+
+f.rhs <- c(input$w1,input$w2,input$w3,input$w4,input$w5,input$w6,input$w7) # make these interactive with sliders
+res <- lp("min",f.obj,f.con,f.dir,f.rhs)$solution
+res2 <- as.data.frame(res)
+row.names(res2) <- c('xA1','xA2','xA3','xA4','xB1','xB2','xB3','xB4','xC1','xC2','xC3','xC4')
+return(res2)
+})
+ 
+
+output$graph <- renderPlot({
+  g <- graph(c("A","1","A","2","A","3","A","4","B","1","B","2","B","3","B","4","C","1","C","2","C","3","C","4"),directed=TRUE) %>% set_edge_attr("weight",value=c(464,513,654,867,352,416,690,791,995,682,388,685)) # check the order of these entries
+  edge_attr(g)
+  plot(g,edge.label=E(g)$weight)
+})
+
+output$table <- renderDataTable({transport()})
+
+
+```
+
+where $x_{A1}$ gives the number of vehicles/vessels to be routed between port A and warehouse 1, $x_{A2}$ represents the number of vehicles to be routed between port A and warehourse 2, etc.
+
+In the next section we will extend the above problem to include distribution points or transhipment points.
+
+## Transshipment
+
+Transhipment problems are like transportation problems with the addition of nodes that neither produce nor consume goods. The first paper on transhipment wa spublished by Orden (1958). 
+
+- Transshipment is a general term used in the transportation and operations research literature -
+
+Transhipment problems are minimum cost network flow problems, i.e. the objective is to minimize the costs of transportation in order to determine the flow of goods through a network. They involve a special case of minmum cost network flow problems with no capcity constraints on the flows (See Hillier & Liebermann, Introduction to operations research,10th Edition, 2015: p. 401) .
+
+Transshipment in fisheries can occur either in port or at sea. There are often legal restrictions that determine where transhipment is allowed. For some fisheries and vessels transhipment at sea may be prohibited. However, illegal activity does occur and transhipment models may provide insight as to how much activity is occurring if the location were known. the location of transhipment points can be considered from the perspective of facility location (see below).
+
+Transshipment at sea is slightly more complicated than transshipment in port. Ports have a known location and known distances betweeen them with transhipment at sea. The transshipment point could be located anywhere. Once this point has been determined a standard transhipment  model can be used to determine the quantity of fish to tranship. The difficulty with transhipment at sea is therefore where to transship and also where fish are caught. The real issue is therefore a type of facility location problem.
+
+## Case study: Analysis of the  Papua New Guinea supply chain
+
+Because processing facilities are located close to ports in PNG. The transport problem is relatively simple and there are few gains to be had optimizing transport. Delivery of canned tuna to population centres is a different story with longer distances involved. To solve the  transportation problem for the PNG tuna distribution network one needs information on the demand for canned tuna in poulation centres. In the absence of this we can demnstrate interactively how the distribution would change with demand.
+
+```{r pngtransport, echo=FALSE}
+
+plotOutput("graph2")
+
+```
+
+
+```{r context="server", echo=FALSE}
+
+output$graph2 <- renderPlot({
+  g <- graph(c("Lae","Frabelle","Lae","Nambawan","Lae","Majestic","Lae","IFC","Lae","RD","Lae","Madang","Madang","RD","RD","Goroka","RD","Hagen",
+               "Goroka","Hagen","Nambawan","Goroka","Nambawan","Hagen","Majestic","Goroka","Majestic","Hagen","Frabelle","Goroka","Frabelle","Hagen","Lae","Port Moresby",
+               "IFC","Goroka","IFC","Hagen","Madang","Frabelle","Madang","Majestic","Madang","Nambawan","Madang","IFC"),directed=TRUE) %>% set_edge_attr("length",value=c(0.0,8.9,8.0,7.1,342,439,11.7,318,486,178,305,473,304,472,299,467,1432,303,471,336,342,343,341)) # check the order of these entries
+  edge_attr(g)
+  plot(g,edge.label=E(g)$length)
+})
+
+
+```
+
+The following processing capacities for each port and cannery are given along with the distances from port to cannery.
+
+<table border=T>
+<th>Port</th><th colspan="5">Cannery</th><th>Supply</th>
+<tr><td></td><td>Frabelle</td><td>Majestic</td><td>Nambawan</td><td>IFC</td><td>RD</td><td></td></tr>
+<tr><td>Lae</td><td>0</td><td>8</td><td>8.9</td><td>7.1</td><td>342</td><td>650</td></tr>
+<tr><td>Madang</td><td>336</td><td>342</td><td>343</td><td>341</td><td>11.7</td><td>300</td></tr>
+<tr><td>Demand</td><td>140</td><td>200</td><td>200</td><td>120</td><td>200</td><td></td></tr>
+</table>
+<p>
+
+These figures ignore cold storage, although from these figures cold storage demands could be calculated using the EOQ formula.
+
+The Wewak loining plant has been omitted because I'm only looking at domestic canneries here. The distance between the Ports of Lae and Madang is 439 km. Both Madang and Lae can be considered transhipment points. 
+
+In both the standard transhipment problems capacity constraints on shipping are ignored. However, these can be incorporated by solving a minimum cost network flow problem.
+
+
+```{r pngtransport2, echo=FALSE}
+
+```
+
+
+```{r context="server", echo=FALSE}
+transport2 <- reactive({
+costs <- matrix(NA,nrow=3,ncol=4)
+
+costs[1,1] <- 464
+costs[1,2] <- 513
+costs[1,3] <- 654
+costs[1,4] <- 867
+costs[2,1] <- 352
+costs[2,2] <- 416 
+costs[2,3] <- 690
+costs[2,4] <- 791
+costs[3,1] <- 995
+costs[3,2] <- 682
+costs[3,3] <- 388
+costs[3,4] <- 685
+
+f.obj <- c(costs[1,1],costs[1,2],costs[1,3],costs[1,4],
+           costs[2,1],costs[2,2],costs[2,3],costs[2,4],
+           costs[3,1],costs[3,2],costs[3,3],costs[3,4])
+
+f.con <- matrix(c(1,1,1,1,0,0,0,0,0,0,0,0,
+                  0,0,0,0,1,1,1,1,0,0,0,0,
+                  0,0,0,0,0,0,0,0,1,1,1,1,
+                  1,0,0,0,1,0,0,0,1,0,0,0,
+                  0,1,0,0,0,1,0,0,0,1,0,0,
+                  0,0,1,0,0,0,1,0,0,0,1,0,
+                  0,0,0,1,0,0,0,1,0,0,0,1),nrow=7,byrow=TRUE) # ok this is now correct
+
+f.dir <- c(rep("<=",3),rep(">=",4))
+
+f.rhs <- c(75,125,100,80,65,70,85)
+res <- lp("min",f.obj,f.con,f.dir,f.rhs)$solution
+return(res)
+})
+
+```
+
+
+### The square-cube law
+
+States that areas scale quadratically and volumes scale cubically. Economies of scale arise when shifting from area to volume, shipping by sea allows one to transport larger volumes than shipping by road and to therefore exploit economies of scale in transportation. The square-cube law implies transportation costs are not constant.
+
+
+## Facility location
+
+Where should a facility such as a cannery, fuel bunkeror port be located? A number of issues play a role here: the availability of land, deep water harbours, etc. However once a  number of locations have been identified based on physical criteria, there may still be a choice as to where a facility should be located. In general facilities should be located in order to minimize the costs of market access. There are five categtoes problem:
+
+- locating a facility that has capacity constraints
+- locating a facility that is not capacity constrained
+- locating a facility in a plane (infinite number of candidate locations) (think of bunker vessels)
+- Attraction-repulsion problems
+- The obnoxious facility location problem
+
+We will examine each of these in  turn. 
+
+
+### Capacitated facility location problem
+
+The data needed for the capcacitated facility location problem are the same as for the transportation problem but in addition costs of constructing and opening a facility at each location are required. In this case we will assume the problem is to open a port.
+
+<p>
+<table border=T>
+<tr>
+<th>Transport costs</th><th colspan="4">Warehouse</th><th>Supply</th>
+</tr>
+<tr><td></td><td>1</td><td>2</td><td>3</td><td>4</td><td></td>
+</tr>
+<tr><td>1</td><td mig>464</td><td>513</td><td>654</td><td>867</td><td>75</td></tr>
+<tr><td>2</td><td>352</td><td>416</td><td>690</td><td>791</td><td>125</td></tr>
+<tr><td>3</td><td>995</td><td>682</td><td>388</td><td>685</td><td>100</td></tr>
+<tr><td>Demand</td><td>80</td><td>65</td><td>70</td><td>85</td><td></td></tr>
+</table>
+</p>
+
+The solution is given by 
+<p>
+
+<table><th><td>
+11
+</td><td></td></th></table>
+```{r facility-1,echo=FALSE}
+
+textOutput("facility1")
+
+```
+
+
+```{r context="server", echo=FALSE}
+
+capacitatedlp <- reactive({
+  
+  
+  
+  
+  f.obj <- c(464,513,654,867,352,416,690,791,995,682,388,685,1,1,1) #  the last three values are the costs of opening each port. 11,12,13,14,21,22,23,24,31,32,33,34,
+  f.con <- matrix(c(1,0,0,0,1,0,0,0,1,0,0,0,0,0,0, # 11, 21, 31, 
+                    0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,# 12, 22, 32,
+                    0,0,1,0,0,0,1,0,0,0,1,0,0,0,0, # 13, 23, 33
+                    0,0,0,1,0,0,0,1,0,0,0,1,0,0,0, # 14, 24, 34
+                    80,65,70,85,0,0,0,0,0,0,0,0,-75,0,0, 
+                    0,0,0,0,80,65,70,85,0,0,0,0,0,-125,0,
+                    0,0,0,0 ,0,0,0,0,80,65,70,85,0,0,-100
+                    ),nrow=7,byrow=T)
+  f.dir <- c(rep("=",4),rep("<=",3))
+  f.rhs <- c(rep(1,4),rep(0,3))
+  res <- lp("min",f.obj,f.con,f.dir,f.rhs,binary.vec=13:15)$solution
+  return(res)
+})
+
+output$facility1 <- renderText(capacitatedlp())
+
+```
+
+</p> 
+Next we consider the uncapacitated facility location problem. This case applies when the supplier has no maximum output. In this case all demand should be supplied by the nearest open facility.
+
+If we compare the solution of the transportation problem to the capacitated facility location problem then we see that port 1 does not suppply warehouse number 1. However, in the facility location problem port 1 supplies 25%  of warehouse 1's demand and ? is satisfied by port ?  the remaining 75% of warehouse 1's demand is met by port 2.
+
+## Where to Transship?
+
+In this problem we will consider the problem of FAD fishing and allow for transshipping at sea (possibly illegally). Where is the optimal point to tranship thatminimizes the distance to all catch locations. This problem is an example of the so-called Fermat-Weber location problem. The problem is usually formulated in terms of distance to demand points but can equally be considered from the supply perspective. We wish to transhhip at a point that minmizes the distance to where fish are being caught.
+
+```{r fermat-weber,echo=FALSE}
+sidebarPanel(
+  sliderInput("x1", label = "x1:",
+              min = 0, max = 200, value = 1, step = 10),
+  sliderInput("x2", label = "x2:",
+              min = 0, max = 200, value = 5, step = 10),
+  sliderInput("x3", label = "x3:",
+              min = 0, max = 200, value = 7, step = 10),
+  sliderInput("x4", label = "x4:",
+              min = 0, max = 200, value = 2, step = 10),
+  sliderInput("x5", label = "x5:",
+              min = 0, max = 200, value = 3, step = 10),
+  sliderInput("y1", label = "y1:",
+              min = 0, max = 200, value = 3, step = 10),
+  sliderInput("y2", label = "y2:",
+              min = 0, max = 200, value = 6, step = 10),
+  sliderInput("y3", label = "y3:",
+              min = 0, max = 200, value = 4, step = 10),
+  sliderInput("y4", label = "y4:",
+              min = 0, max = 200, value = 5, step = 10),
+  sliderInput("y5", label = "y5:",
+              min = 0, max = 200, value = 3, step = 10)
+)
+
+mainPanel(
+  
+  plotOutput("plt"),
+  textOutput("sol"),
+  textOutput("res")
+  
+  )
+
+
+
+```
+
+```{r context="server", echo=FALSE}
+
+fads <- reactive({
+  
+  plt <- rloca.p(10, xmin = 0, xmax = 10, ymin = 0, ymax = 10)
+  
+  plt <- loca.p(x=c(input$x1,input$x2,input$x3,input$x4,input$x5),y=c(input$y1,input$y2,input$y3,input$y4,input$y5))
+  #plt <- contour(plt)
+  #dplt<- as.data.frame(plt)
+  #plt <- contour(plt)
+  curve <- plot(plt,main="FADS",col="red")
+  return(curve)
+})
+
+contour1 <- reactive({
+  plt2 <- loca.p(x=c(input$x1,input$x2,input$x3,input$x4,input$x5),y = c(input$y1,input$y2,input$y3,input$y4,input$y5))
+  #dplt2 <- as.data.frame(plt2)
+  cplot <- contour(plt2,main="Iso-distance")
+  return(cplot)
+})
+
+res <- reactive({
+  weberpoint <- distsummin(loca.p(x=c(input$x1,input$x2,input$x3,input$x4,input$x5),y = c(input$y1,input$y2,input$y3,input$y4,input$y5)))
+  return(weberpoint)
+})
+
+
+output$plt <- renderPlot({
+                          par(mfrow=c(2,1))
+                          fads()
+                          contour1()
+                          })
+
+output$res <- renderText({res()})
+
+output$sol <- renderText({"Optimal location:"})
+
+```
+The top panel depicts hypothetical locations where fish are caught, e.g. FADS or fishing grounds in the case of longline. Fishing grounds may be spread out but logbook data will indicate the approximate GPS co-ordinates where sets were made and fish caught. The lower plot depicts a contour map of the distances (a proxy for costs)  to each of the FADS/catch locations. Each curve represents points that are equi-distant from the center. A rational fishing operator would transship at a point that minimzes the distance to travel for vessels. This point can be found by solving a Fermat-Weber problem. The co-ordinates of the optimal location are at the bottom.
+
+ 
+## Value chain analysis
+
+Insufficient data to conduct a global value chain analysis:
+
+- Input output table for PNG needed that includes details of the fisheries sector
+
+- Software is available
+
+- Constructing input-output tables is a large project and is not something that FFA can do, Fiji tables were done by ADB but are not detailed 
+enough for a food value chain analysis.
+
+- This would require collaboration between multiple interantional organizations and projects and multiple PNG government agencies
+
+
+
+
+
+
