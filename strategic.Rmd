@@ -1,0 +1,737 @@
+---
+title: "Strategic behaviour in Fisheries"
+author: "Rodney Beard FFA"
+output: 
+  learnr::tutorial:
+  progressive: true
+runtime: shiny_prerendered
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(learnr) # This is a package for tutorial design
+# This package is for Kobe plots and related plots
+#library(tidyverse) # This is the tidyverse just in case we need it
+library(GameTheory) # This package is for coalitional form games
+library(CoopGame)
+#library(reticulate) # This library allows interaction with Python code and modules Ackn. Vince Knight
+# you will need lpSolve for this
+library(lpSolve)
+library(rje)
+#library(DT)
+#library(flexdashboard)
+#rm(list=ls())
+```
+
+## Multiple Decision-Makers
+
+This will need to allow for local and global variables and persistence across user sessions.
+
+Now you will only control effort but you will be competing with others to catch fish. This situation where your decions on how much effort to put in to catch fish impact a stock that is shared among multiple, fishermen, fishing operations or fishing nations can be thought of as a "game" between players. Fisheries economists and fisheries modellers use game theory to capture how multiple decision-makers impact the the profitability of entire fisheries via the population dynamics of shared fish stocks. Game theory can also used to analyse institutional features of fisheries. For example it can be used to analyse politcal and legal institutions, property rights, and incentives of various actors, international treaties and agreements, contracts (contract theory - related to game theory) and a variety of other phenomena. It can assist in policy design (mechanism design) and it can be used to design information campaigns (information design).
+
+## Game Theory
+
+Game theory has been applied to fisheries in two ways
+
+- Non-cooperative games
+
+These are games of pure competition and have been used to explain how fish stocks can be overexploited.
+
+Games are situations that describe strategic interactions between players. They can modelled mathematically, solved on the computer and studied by running experiments with humans.
+
+Games can be distinguished in terms of how they depend on time. Games that occur only once and for which time plays no role are called static games. Games which repeat themselves over and over are called repeated games and games that change through time are called dynamic games.
+
+To illustrate the basic idea of a game. Consider a two-person game (game with two players). The payoffs to player one are listed in the following table. 
+
+<table border="1" width=80% height=80%>
+<colgroup>
+  <col span="1" valign="middle">
+</colgroup>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>Player 2</b></td>
+<tr>
+  <td> </td> <td></td><td>Left</td><td>Right</td>
+</tr>
+
+<tr rowspan="2" valign="middle">
+  <td align="center"><b>Player 1</b></td><td>Up</td><td>1</td><td>2</td>
+</tr>
+<tr>
+  <td></td><td>Down</td><td>3</td><td>4</td>
+</tr>
+</table>
+
+The row player (Player 1) has two actions to choose from "up" or "down", the column player also has two actions to choose from "left" or "right". The payoffs to the row player are listed in the table. This is an example of a decision table where the actions of the column player correspond to different states of the world as far as the row player is concerned. In one state of the world the column player chooses left, in another state of the world the column player chooses right, the row player will receive different rewards in each state of the world.
+
+An example could be the following scenario.A Fisherman plays against the Fisheries management organization:
+
+<table border="1" width=80% height=80%>
+<colgroup>
+  <col span="1" valign="middle">
+</colgroup>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td>10</td><td>5</td>
+</tr>
+<tr>
+  <td></td><td>Don't Fish</td><td>0</td><td>-5</td>
+</tr>
+</table>
+
+If the fishermean fishes when the fishery is closed and assuming no competitors are fishing he gets a pay-off of 10. If the fishery is open and he fishes he gets payoff of 5 because others will be fishing as well (less fish to go around). If the fishery is closed and he doesn't fish he gets a payoff of 0. However if the fishery is kept open and he doesn't fish then he misses out on catchign fish he could otherwise have caught, so he incurs a cost called an opportunity cost of -5.
+
+What the fisherman should do if he wishes to catch lots of fish in this case is clear. He should fish when the fishery is closed. We have not taken into account any monitoring control or surveillanc ebehaviour on the part of the RFMO, in fact we haven't taken into account any behaviour of the RFMO so far. To do this we analyze the problem using game theory. First, we ask what are payoffs (rewards) to the RFMO. These are summarised in the following table:
+
+<table border="1" width=80% height=80%>
+<colgroup>
+  <col span="1" valign="middle">
+</colgroup>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td  rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td>-5</td><td>10</td>
+</tr>
+<tr>
+  <td></td><td>Don't Fish</td><td>0</td><td>5</td>
+</tr>
+</table>
+
+Under these circumstances the RFMO would clearly keep the fishery open.  We can combine both payoff matrices into a single payoff matrix as follows:
+
+<table border="1" width=80% height=80%>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td>10,-5</td><td>5,10</td>
+</tr>
+<tr> 
+  <td></td><td>Don't Fish</td><td>0,0</td><td>-5,5</td>
+</tr>
+</table> 
+
+The first number in each cell of this table is the payoff to player 1 (the fisherman) and the second number the payoff to player 2 (the RFMO). This is an example of a game theoretic payoff matrix or table, Game theoretic payoff matrices are formed by combining two decision tables.
+
+Keeping our intuition from before we know that our fisherman will  fish and the RFMO will keep the fishery open. In the case of the fisherman no matter what the RFMO does he will fish. So we can eliminate "Don't fish" from consideration:
+
+<table border="1" width=80% height=80%>
+
+<td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td>10,-5</td><td>5,10</td>
+</tr>
+<tr style="background-color:red"> 
+ <td></td><td>Don't Fish</td><td>0,0</td><td>-5,5</td>
+</tr>
+</table> 
+
+Similarly, we see that the RFMO would choose to "Keep the fishery open no matter the Fisherman chose to do", so that we can eliminate closing the fishery from consideration.
+
+The first number in each cell of this table is the payoff to player 1 (the fisherman) and the second number the payoff to player 2 (the RFMO). This is an example of a game theoretic payoff matrix or table, Game theoretic payoff matrices are formed by combining two decision tables.
+
+Keeping our intuition from before we know that our fisherman will  fish and the RFMO will keep the fishery open. In the case of the fisherman no matter what the RFMO does he will fish. So we can eliminate "Don't fish" from consideration:
+
+<table border="1" width=80% height=80%>
+<td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td style="background-color:red">Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td style="background-color:red">10,-5</td><td>5,10</td>
+</tr>
+<tr style="background-color:red"> 
+ <td></td><td>Don't Fish</td><td style="background-color:red">0,0</td><td>-5,5</td>
+</tr>
+</table> 
+
+What is left is the outcome (5,10) in which the fisherman fishes and the RFMO keeps the fishery open. By eliminating the worst action of each player in turn we are able to fina a solution which predicts what rational players would do. This process is called <b> iterated elimination of dominated strategies</b>.
+
+However, this process doesn't always work. Consider the next game:
+
+<table border="1" width=80% height=80%>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td>10,-5</td><td>-2,10</td>
+</tr>
+<tr> 
+  <td></td><td>Don't Fish</td><td>0,0</td><td>2,5</td>
+</tr>
+</table> 
+
+In this case the fisherman is required to pay a fee (7) to fish so would prefer not to fish legally. What will be the joint outcome of both players choosing independently? If you try to eliminate worst strategies it won't work. It is true that the RFMO always prers to keep the fishery open in this case. however, what the fisherman prefers to do depends on what the RFMO does.Paradoxically, if the RFMO were to close the fishery it would pay the fisherman to fish. 
+
+To solve this problem we apply a solution called a <b>Nash equilibrium</b>. This means that one player chooses their best option indpendently of what the other player will do. To find the Nash equilibrium examine each cell in the matrix and decide whether the fisherman and the RFMO can improve their choices. We will do this as an exercise.
+
+```{r quiz, echo=FALSE}
+question("Look at the cell at the top left where the Fisherman receives 10 and the RFMO -5. Can the fisherman obtain a higher payoff by not fishing?",
+         answer("No",correct=TRUE),
+         answer("Yes"))
+question("Look at the cell at the bottom left where the Fisherman receives 0 and the RFMO 0. Can the fisherman obtain a higher payoff by  fishing?",
+         answer("No"),
+         answer("Yes",correct=TRUE))
+question("Look at the cell at the top right where the Fisherman receives -2 and the RFMO 10. Can the fisherman obtain a higher payoff by  not fishing?",
+         answer("No"),
+         answer("Yes",correct=TRUE))
+question("Look at the cell at the bottom right where the Fisherman receives 2 and the RFMO 5. Can the fisherman obtain a higher payoff by fishing?",
+         answer("No", correct=TRUE),
+         answer("Yes"))
+
+```
+
+## Co-ordination or Assurance games
+
+There may be more than one Nash equilibrium. An example of a game where this occurs is a coordination or assurance game. Consider a situation where the RFMO prefers to close the fishery than to keep it open because stocks are low. What will each player now do? One answer is to use the recipe for finding Nash equilibria that your elarned in the previouss ection.
+
+<table border="1" width=80% height=80%>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>RFMO</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Close fishery</td><td>Keep fishery open</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>Fisherman</b></td><td></td><td>Fish</td><td>10,10</td><td>-2,-5</td>
+</tr>
+<tr> 
+  <td></td><td>Don't Fish</td><td>0,0</td><td>2,5</td>
+</tr>
+</table>
+
+```{r equilibria2, echo=FALSE}
+question("How many Nash equilibria are there?",
+        answer("One"),
+        answer("Two", correct=TRUE),
+        answer("Three"),
+        answer("Four")
+         
+          )
+question("Which cell in the matrix is a Nash equilibrium?",
+         answer("Top left and Top right "),
+         answer("Top left and Bottom right", correct=TRUE),
+         answer("Bottom left and Top right"),
+         answer("Bottom left and Bottom right")
+         )
+```
+
+
+## Test your knowledge
+
+```{r equilbria, echo=FALSE}
+question("A dominant strategy equilibrium is found by",
+         answer("Inspecting the payoff matrix cell by cell and testing whether each player can improve upon their strategy"),
+         answer("Always choosing the top row"),
+         answer("Eliminating in turn the worst row or column strategy for each player",correct=TRUE),
+         answer("None of the above")
+         )
+question("A Nash equilibrium is found by",
+         answer("Guessing"),
+         answer("Cell by cell inspection",correct=TRUE),
+         answer("Elimiating rows"),
+         answer("Eliminating columns"))
+
+```
+
+
+## Three-player games
+
+In this section we will consider three player games. Consider three players, say countries sharing a fishery. Player A is the row player, player B the column player and player <b>C chooses  which  payoff matrix results</b>, assume that the choices are high and low fishing effort. If C choose to exert a low fishing effort the top payoff matrix results, if they choose a high effort the bottom payoff matrix results.
+
+<div>
+<table border="1" width=80% height=80%>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>B</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Low Effort</td><td>High Effort</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>A</b></td><td></td><td>Low Effort</td><td>10,10, 10</td><td>10,15,10</td>
+</tr>
+<tr> 
+  <td></td><td>High Effort</td><td>15,10,10</td><td>5,5,5</td>
+</tr>
+</table> 
+</div>
+<br>
+<div>
+<table border="1" width=80% height=80%>
+  <td colspan="2"></td><td></td><td colspan="2" align="center"><b>B</b></td>
+<tr>
+  <td> </td> <td></td><td></td><td>Low Effort</td><td>High Effort</td>
+</tr>
+
+<tr>
+  <td rowspan="2" align="center"><b>A</b></td><td></td><td>Low Effort</td><td>10,10,15</td><td>10,15,15</td>
+</tr>
+<tr> 
+  <td></td><td>High Effort</td><td>15,10,15</td><td>0,0,0</td>
+</tr>
+</table> 
+</div>
+
+Regardless of what B and C do what is the worst payoff that A can achieve?
+
+```{r three-player, echo=FALSE}
+question("Regardless of what B and C do what payoff can A guarantee for themselves at minimum?",
+         answer("0"),
+         answer("5"),
+         answer("10",correct=TRUE),
+         answer("20"),
+         answer("25"),
+         answer("30"),
+         answer("40")
+         )
+question("Regardless of what A and C do what payoff can B guarantee for themselves at minimum?",
+         answer("0"),
+         answer("5"),
+         answer("10",correct=TRUE),
+         answer("20"),
+         answer("25"),
+         answer("30"),
+         answer("40")
+         )
+question("Regardless of what A and B do what payoff can C guarantee for themselves at minimum?",
+         answer("0"),
+         answer("5",correct=TRUE),
+         answer("10"),
+         answer("20"),
+         answer("25"),
+         answer("30"),
+         answer("40")
+         )
+question("If A and B cooperate what payoff can they jointly guarantee for themselves (for the team) at minimum?",
+         answer("0"),
+         answer("10"),
+         answer("20"),
+         answer("25",correct=TRUE),
+         answer("30"),
+         answer("40")
+         )
+question("If B and C cooperate what payoff can they jointly guarantee for themselves at minimum?",
+         answer("0"),
+         answer("10"),
+         answer("20"),
+         answer("25",correct=TRUE),
+         answer("30"),
+         answer("40")
+         )
+
+question("If A and C cooperate what payoff can they jointly guarantee for themselves at minimum?",
+         answer("0"),
+         answer("10"),
+         answer("20"),
+         answer("25",correct=TRUE),
+         answer("30"),
+         answer("40")
+         )
+question("If all three cooperate what payoff are they are able to achieve?",
+         answer("0"),
+         answer("10"),
+         answer("20"),
+         answer("25"),
+         answer("30"),
+         answer("40",correct=TRUE)
+         )
+
+```
+
+## Discussion 
+
+Why might cooperation not come about?
+How might cooperating players divide their joint payoff?
+
+The answers to the above questions give you the payoffs of a cooperative/coalitional form game. That we will look at later. 
+
+## Repeated Games
+
+Repeated games are games in which the players repeatedly interact with the same payoffs over time. A special case is that of a two period game. 
+
+What will each player do? Typically we solve this backwards. So work out what you would do in the second period and then what you would do in the first period.
+
+## N- Player games of shared fish stocks
+
+This section applies mostly to coastal fisheries characterized by common property or common pool resources. 
+This approach assumes that decision are not either or decisions. Decisions are measured in hours of fishing effort, number of boats, number of hooks, vesel days or other similar variables. These models ignore biology and concentrate on institutional aspects of fisheries. 
+
+Common pool problems differ from open access problems by assuming a fixed number of participants.Consider a shared stock of fish with harvest shared proportional to effort (we will later see that his assumption is problematic) then in the following exercise we can examine how varying the effort of a fishery  consisting of 4 participants, in this is exercise you will also vary some technical coefficients of the catch effort relationship, in other words we will not asume the usual catch per unit effort production relationship. 
+
+
+```{r echo=FALSE}
+
+```
+
+
+```{r context="server"}
+
+profit1 <- reactive({
+  
+  # do this with 3 or 4 players
+  a <- input$a
+  b <- input$b
+  E1 <- input$E1
+  E2 <- input$E2
+  E3 <- input$E3
+  E4 <- inout$E4
+  totalCatch <- q*(E1 +E2 +E3+ E4)^(a)*X^b
+  effortProportion <- E1/(E1+E2+E3+E4)
+  profit.1 <- totalCatch*effortProportion - c*E1
+  profit.2 <- totalCatch*effortProportion - c*E2
+  profit.3 <- totalCatch*effortProportion - c*E3
+  profit.4 <- totalCatch*effortProportion - c*E4
+  
+})
+
+profit2 <- reactive({
+  
+  # do this with 3 or 4 players
+  a <- input$a
+  b <- input$b
+  E1 <- input$E1
+  E2 <- input$E2
+  E3 <- input$E3
+  E4 <- inout$E4
+  totalCatch <- q*(E1 +E2 +E3+ E4)^(a)*X^b
+  effortProportion <- E1/(E1+E2+E3+E4)
+  profit.1 <- totalCatch*effortProportion - c*E1
+  profit.2 <- totalCatch*effortProportion - c*E2
+  profit.3 <- totalCatch*effortProportion - c*E3
+  profit.4 <- totalCatch*effortProportion - c*E4
+  
+})
+
+profit3 <- reactive({
+  
+  # do this with 3 or 4 players
+  a <- input$a
+  b <- input$b
+  E1 <- input$E1
+  E2 <- input$E2
+  E3 <- input$E3
+  E4 <- inout$E4
+  totalCatch <- q*(E1 +E2 +E3+ E4)^(a)*X^b
+  effortProportion <- E1/(E1+E2+E3+E4)
+  profit.1 <- totalCatch*effortProportion - c*E1
+  profit.2 <- totalCatch*effortProportion - c*E2
+  profit.3 <- totalCatch*effortProportion - c*E3
+  profit.4 <- totalCatch*effortProportion - c*E4
+  
+})
+
+profit4 <- reactive({
+  
+  # do this with 3 or 4 players
+  a <- input$a
+  b <- input$b
+  E1 <- input$E1
+  E2 <- input$E2
+  E3 <- input$E3
+  E4 <- input$E4
+  totalCatch <- q*(E1 +E2 +E3+ E4)^(a)*X^b
+  effortProportion <- E1/(E1+E2+E3+E4)
+  profit.1 <- totalCatch*effortProportion - c*E1
+  profit.2 <- totalCatch*effortProportion - c*E2
+  profit.3 <- totalCatch*effortProportion - c*E3
+  profit.4 <- totalCatch*effortProportion - c*E4
+  
+})
+renderTable({
+  
+
+})
+
+
+
+```
+
+
+## Dynamic games
+
+Dynamic games are games in which decisions in one period have an impact either directly or indirectly on payoff in other peiods of time: what you choose to do today will impact you and others tomorrow". The majority of applications of game theory to fisheries economics are dynamic games.
+
+Dynamic games in fisheries economics, start with a model of the growth of the fish population (stock), a biological model, they then consider how different players jointly influence the stock of fish by maximising their payoffs. these models involve the application of complex mathematical techniques similar to those used in stock assessment but with the addition of optimization and strategic behaviour. Often they involve the application of complex computer simulation techniques.
+
+## Coalition formation
+
+### Cooperative (Coalitional form) games
+
+These are games that look at the outcome of negotiations between players. They have been applied to the analysis of international fisheries agreements. Cooperative or coalitional form game theory examines the outcomes of agreements and how mutual benefits from agreement can be divided between players.
+
+These models can be used to analyse whether countries can form aliances, agree to sign treaties and share the benefits of cooperating internationally.
+
+Games are called constant sum if the value of a coalition plus the value of the remaining players (without the coalition) sum to the value of the game (value of the all the players). If the coaliton only has one member, then we call the value a payoff. A game is called a zero-sum game when the value of the game is zero.
+
+
+To understand the formation of coalitions we can use coalitional form or cooperative game theory. We start with a group of players and consider how subgroups or subsets of players can collaborate and what value such collaboration brings.
+
+To help understand how coalitional game theory works consider the following problem:
+
+Three people live on an island surrounded by a reef and want to go fishing. One of them owns a canoe, one owns a fishing line and one owns a   paddle. The owner of the canoe can't paddle out to the reef without a paddle, the owner of the fishing line can't reach the reef without a canoe and the owner of the paddle, can't make much use of it without a canoe. The owners of the paddle and the canoe can't catch any fish without a fishing line. They have no otherequiment. If they don't cooperate each of them catches no fish. A is from melanesia, B is from Polynesia, and C from Micronesia. Each of them receives a value from catching fish which can be shared as well as value from each others company which can't be shared. The total values they receive are 0 if the fish by themselves, 2 if A and any two of them fish together and 6 if all 3 fish together. You can think of the 6 being made up of a value of 6 from the enjoyment of each others company while fishing and the remaining value being the fish they catch.
+  
+### The Core (Stable outcomes)
+
+In economics there are many different concepts that used to determine whether agreements are stable, that apply under a variety of circumstances. The simplest one to understand is that of the core. The core is the set of outcomes or divisions of a resource that can be divided up in such a way that no-one would dispute the agreement and the agreement is efficient in the sense that nothing is left over ("no left-overs"). Consider guests at dinner, no-one would complain that they had too much or too little and there are no left-overs, if what they shared were in the core, however if the division of the food were outside the core some would grumble. 
+
+However, this is not a perfect solution as the core can contain many elements, so of which would lead to some parties envying others. Also, the core assumes transfers can be made between parties and that once an agreement has been formed all parties are committed to the agreement. For these and other reasons, game theorists have invented many other solutions to finding stable agreements.  
+
+Consider another example how can the three peoples of the Pacific form an international agreement to share resources. Each of the peoples of Micronesia, Melaneisa and Polynesia if they were to go it alone control different resources by themselves by pooling an sharing resources they may be able to achieve more. Is an agreement to share possible? The core tells us how large the size of the pie that they can agree to share might be.
+ 
+Under what conditions will an efficient and stable agreement arise? Try varying the value of indivdual players to see if a stable agreement is possible! A you change the input the program will compute whether a stable agreement is possible and print out an answer in red if it's not possible and in green if an agreement is possible.
+
+In what follows we assume the total size of the pie is 8 (slices). With any pair of player controlling at least 4 (slices).
+ 
+```{r echo=FALSE}
+ # idea: vary the imputations and check the rationality and efficiencty conditions for the core
+sidebarPanel(
+  sliderInput("u1", label = "Micronesia:",
+              min = 0, max = 4, value = 0, step = 0.1),
+  sliderInput("u2", label = "Melanesia:",
+              min = 0, max = 4, value = 0, step = 0.1),
+  sliderInput("u3", label = "Polynesia:",
+              min = 0, max = 4, value = 0, step = 0.1)
+  #numericInput("u3",label="Enter the size of your catch:",value=0,min=NA,max=4,step=NA)
+  )
+mainPanel(
+htmlOutput("stability"),
+plotOutput("core")
+)
+ 
+```
+ 
+ &nbsp;<br>
+ &nbsp;<br>
+ 
+ The results show whether or not a stable efficient solution is possible. However, they do not tell us how to share the resources fairly.
+
+```{r context="server"} 
+core <- reactive({
+  characteristic <- c(as.numeric(input$u1),as.numeric(input$u2),as.numeric(input$u3),4,4,4,8)
+  players <- 3
+  
+  playerset <- c(1:players) # list of players
+  pset <- powerSet(playerset)
+  coalitions <- setdiff(pset,pset[1]) # powerset of players with empty set removed
+  A <- matrix(c(rep(0,length(coalitions))),nrow=length(coalitions),ncol=players,byrow=TRUE) 
+  cardinality <- length(characteristic)
+  # need to rethink the following
+  
+  for (s in c(1:length(coalitions))){
+    coalitionsize <- c(length(unlist(coalitions[s])))
+    set <- unlist(coalitions[s])
+    
+    
+    for (i in c(1:coalitionsize)){
+      A[s,set[i]] <- 1
+      
+    }
+    
+  }     
+  f.obj <- c(rep(1,players)) 
+  f.con <- A 
+  f.rhs <- characteristic
+  f.dir <- c(rep(">=",length(coalitions))) 
+  res <- lp ("min", f.obj, f.con, f.dir, f.rhs)
+  
+  diff <- sum(res$solution)-characteristic[cardinality]
+  
+  answer <- as.character(ifelse(diff != 0,HTML("The answer is:<font  color=#FF0000>The core is empty: An efficient stable agreement is not possible</font>"),HTML("The answer is:<font color=#008000>The core is non-empty: An efficient stable agreement is possible</font>")))
+  
+return(answer)
+  
+}) # end reactive function
+
+corePlot <- reactive({
+  characteristic <- c(as.numeric(input$u1),as.numeric(input$u2),as.numeric(input$u3),4,4,4,8)
+  drawImputationset(characteristic, label=TRUE)
+  drawCore(characteristic, holdOn=TRUE, colour="green")
+  
+})
+
+
+output$stability <- renderText({
+ core()
+    })
+
+output$core <- renderPlot({
+  corePlot()
+})
+```
+
+
+## Fair sharing
+  
+How should they share the resources? How to answer questions like this is the subject of cooperative (coalitional) game theory.
+
+- Proportionally?
+
+- Shapley value (Fair division)
+
+The propostional rule is one way to share the resources but it is not alway fair. By fair we mean those who are equal should be treated equalyl but at the same time we should take differences into account, so that those who are not equal are treated differently. The Shapley value is one sharing rule that does this. It is defined as the average marginal contribution of each player to a coalition averaged over all possible coalitions.
+
+```{r echo=FALSE}
+
+sidebarPanel(
+  sliderInput("v1", label = "Micronesia:",min = 1, max = 4, value = 0, step = 0.1),
+  sliderInput("v2", label = "Melanesia:",min = 1, max = 4, value = 0, step = 0.1),
+  sliderInput("v3", label = "Polynesia:",min = 1, max = 4, value = 0, step = 0.1)
+  )
+mainPanel(plotOutput("shapley"))
+```
+  
+
+```{r context="server"}
+
+shapley <- reactive({
+              COALITIONS <- c(as.numeric(input$v1),as.numeric(input$v2),as.numeric(input$v3),3,3,3,12)
+              ISLANDERS <- DefineGame(3,COALITIONS)
+              #summary(ISLANDERS)
+              NAMES <- c("Micronesia", "Melanesia","Polynesia")
+              res <- ShapleyValue(ISLANDERS,NAMES)
+              return(res)
+            })
+
+output$shapley <- renderPlot({
+  summary(shapley())
+  })
+```
+ 
+If each people controls different resources how should the resources be split? Who gets what? 
+  
+## Claims problems and fisheries  
+  
+A common problem in fisheries is that claims for higher catch allocations based on historical catches often exceed agreed total allowable catches. This situation is called a claims (bankruptcy) problem because claims to be allowed to fish exceed the allowed catch.
+
+To illustrate this consider the example of the Northern European Anglerfish fishery. Each of seven countires (France, Spain, UK, Ireland, Belgium, Netherlands and Germany) makes claims that depend on their historical fishing catches (13,952; 6,256; 4,348; 2,196; 927;299 and 158). The example is based on [Gallastegui, M. C., Inarra, E., & Prellezo, R. (2002). Bankruptcy of fishing resources: the Northern European anglerfish fishery. Marine Resource Economics, 17(4), 291-307.](https://www.journals.uchicago.edu/doi/abs/10.1086/mre.17.4.42629371)
+
+The following computation will show for different allocation rules how the total allowable catch should be divided between countries. Your task is to pick a country and try and increase your allocation under each of the rules by varying your claim.  
+
+There are many different rules with different properties. The proportional rule is not fair if countries are different (we saw this with the Shapley value example). The Talmud rule comes from the Jewish religious book the Talmud, which suggests various solutions to fair division problems. 
+
+Constrained equal awards (CEA): equal awards to all agents subject to no one receiving more than his claim.
+
+Constrained equal losses (CEL): equal awards to all agents subject to no one receiving a negative amout (paying the others). 
+
+Random arrivals (RA), looks at what happens when the allocation is filled on a first-come first serve basis until all of the available amount has been allocated.
+
+In the following exercise you take the part of a particular country for example the"UK" who wishes to renegotiate it's catch share agreements with the European countries as part of the Brexit negotiations. Can they actually get more? You may enter any catch claim between the claims of the next smallest and the next largest country (software requires that the ranking of the countries does not change).
+
+<div>
+
+```{r echo=FALSE}
+sidebarPanel(
+  sliderInput("w1", label = "Value Germany:",
+              min = 0, max = 15000, value = 158, step = 10),
+  sliderInput("w2", label = "Value Netherlands:",
+              min = 0, max = 15000, value = 299, step = 10),
+  sliderInput("w3", label = "Value Belgium:",
+              min = 0, max = 15000, value = 927, step = 10),
+  sliderInput("w4", label = "Value Ireland:",
+              min = 0, max = 15000, value = 2196, step = 10),
+  sliderInput("w5", label = "Value UK:",
+              min = 0, max = 15000, value = 4348, step = 10),
+  sliderInput("w6", label = "Value Spain:",
+              min = 0, max = 15000, value = 6256, step = 10),
+  sliderInput("w7", label = "Value France:",
+              min = 0, max = 15000, value = 13952, step = 10)
+  #numericInput("w5", label="UK catch claim:",value=4348,min=2197,max=6255,step=NA)
+) 
+mainPanel(
+  
+  dataTableOutput("table")
+  
+    
+  )
+```
+
+```{r context="server"}
+claims <- reactive({
+Anumber <- input$w5  
+CLAIMS <- c(158,299,927,2196,Anumber,6256,13952) 
+COUNTRIES <- c("Germany","Netherlands","Belgium","Ireland","UK","Spain","France") 
+Countries <- c("Germany","Netherlands","Belgium","Ireland","UK","Spain","France","GINI COEFF") 
+#df <- data.frame(claims = claims, countries = COUNTRIES)
+#newdf <- df[order(df$claims),]
+#claims <- c(unlist(newdf["claims"]))
+#countries <- c(as.character(newdf["COUNTRIES"]$COUNTRIES))
+##
+#Countries <- c(countries,"GINI COEFF")
+#TAC <- sum(claims) # just sum the historical claims to obtain an initial TAC
+INARRA <- AllRules(13500,CLAIMS,COUNTRIES) 
+rules <- data.frame(cbind(Countries,rbind(INARRA[1,],INARRA[2,],INARRA[3,],INARRA[4,],INARRA[5,],INARRA[6,],INARRA[7,],
+                          INARRA[8,])))
+#rules <-summary(INARRA)
+#plot(INARRA,5)
+return(rules)
+})
+output$table <- renderDataTable({claims()}) ## Display allocations for UK Lorenz Rules(INARRA) ## Inequality graph
+```
+
+</div>
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+
+&nbsp;
+&nbsp;
+
+<br>
+
+&nbsp;
+
+<div>
+### Fair division rules should meet the following criteria:
+
+- No country should receive more than its claim
+- Two countries with equal claims should be equally awarded
+- One country with a greater claim than another should not be awarded a smaller quota
+- If the TAC increases no country should receive less
+- Historical overexploitation should not be rewarded
+- The minimum rights of countries should be respected
+- A rule should not be manipulable by forming or leaving coalitions
+</div>
+<br>
+
+
+### References
+
+Bailey, M., Sumaila, U. R., & Lindroos, M. (2010). Application of game theory to fisheries over three decades. Fisheries Research, 102(1-2), 1-8.
+
+Bender, A., K??gi, W., & Mohr, E. (2002). Informal insurance and sustainable management of common-pool marine resources in Ha'apai, Tonga. Economic development and cultural change, 50(2), 427-439.
+
+Lone Groennbaek, Marko Lindroos, Gordon Munro, Pedro Pintassilgo,
+Game theory and fisheries, Fisheries Research,Vol. 203,2018,pp. 1-5,
+https://doi.org/10.1016/j.fishres.2017.11.027.
+
+[Hanna, S. S. (1998), INSTITUTIONS FOR MARINE ECOSYSTEMS: ECONOMIC INCENTIVES AND FISHERY MANAGEMENT. Ecological Applications, 8: S170-S174. doi:10.1890/1051-0761(1998)8[S170:IFMEEI]2.0.CO;2](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1890/1051-0761%281998%298%5BS170%3AIFMEEI%5D2.0.CO%3B2)
+
+[Ross, Don, "Game Theory", The Stanford Encyclopedia of Philosophy (Winter 2016 Edition), Edward N. Zalta (ed.), URL = <https://plato.stanford.edu/archives/win2016/entries/game-theory/>](https://plato.stanford.edu/entries/game-theory/)
+
+[Link to next module](https://ffa-econ.shinyapps.io/management/)
+[Link to previous module](http://ffa-econ.shinyapps.io/dynamics/)
+
+
